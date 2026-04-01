@@ -31,4 +31,7 @@ build/
 
 ### VS Code ###
 .vscode/
-restaurant.sqlite
+
+
+
+# Ignore SQLite Database Files
