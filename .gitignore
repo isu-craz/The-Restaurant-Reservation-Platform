@@ -39,6 +39,9 @@ build/
 *.db
 restaurant.sqlite
 
+# .DS_Store = a hidden file created by macOS
+.DS_Store
+
 # DOCS
 Team-Leadership-Guide.md
 project-ui
