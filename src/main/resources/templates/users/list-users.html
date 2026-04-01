@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>User Management Dashboard</title>
+    <!-- Use Tailwind CSS for rapid styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 p-10 font-sans text-slate-900">
+<div class="max-w-5xl mx-auto">
+    <div class="flex justify-between tracking-tight items-center mb-8">
+        <h1 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">User Management</h1>
+        <a href="/users/add" class="bg-indigo-600 px-5 py-2.5 text-white font-semibold rounded-lg hover:-translate-y-0.5 transition shadow-indigo-600/20 shadow-lg">+ Add New User</a>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 p-8 overflow-hidden">
+        <table class="w-full text-left">
+            <thead>
+            <tr class="text-sm uppercase tracking-wider text-slate-500 border-b-2 border-slate-100">
+                <th class="pb-4">ID</th>
+                <th class="pb-4">Type</th>
+                <th class="pb-4">Username</th>
+                <th class="pb-4">Email</th>
+                <th class="pb-4">Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="user : ${users}" class="border-b border-slate-50 hover:bg-slate-50 transition">
+                <td class="py-4 font-semibold text-slate-700" th:text="${user.id}">1</td>
+                <td class="py-4"><span class="bg-indigo-50 text-indigo-600 text-xs font-bold px-3 py-1 rounded-full uppercase" th:text="${user.class.simpleName}">Role</span></td>
+                <td class="py-4 font-medium" th:text="${user.username}">Name</td>
+                <td class="py-4 text-slate-500" th:text="${user.email}">Email</td>
+                <td class="py-4 flex gap-2">
+                    <a th:href="@{/users/edit/{id}(id=${user.id})}" class="bg-slate-100 text-slate-700 px-3 py-1.5 rounded-md text-sm font-semibold hover:bg-slate-200">Edit</a>
+                    <a th:href="@{/users/delete/{id}(id=${user.id})}" class="bg-red-50 text-red-600 px-3 py-1.5 rounded-md text-sm font-semibold hover:bg-red-100" onclick="return confirm('Delete this user?');">Delete</a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>
