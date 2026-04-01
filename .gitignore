@@ -35,3 +35,6 @@ build/
 
 
 # Ignore SQLite Database Files
+*.sqlite
+*.db
+restaurant.sqlite
