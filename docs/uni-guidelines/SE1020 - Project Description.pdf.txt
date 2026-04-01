@@ -1,0 +1,48 @@
+SE1020 – Object Oriented Programing 
+Assignment:  Project 
+Grade weightage : 10% 
+Project Overview: 
+Develop a web-based application to the given topic that allows users to manage and interact with 
+a collection of items or services. The application should be built using Java web technologies in 
+IntelliJ IDEA and will use file read/write operations for data storage instead of a database. 
+Project Objectives: 
+• Apply Object-Oriented Programming (OOP)  concepts such as encapsulation, 
+inheritance, and polymorphism. 
+• Implement minimum 3  of CRUD (Create, Read, Update, Delete)  operations for 
+managing data using file handling techniques. 
+• Create a user-friendly interface for interacting with the system. 
+Development Environment: 
+• Software: IntelliJ IDEA 
+• Languages/Technologies: Java,  Spring Boot, HTML/CSS, JavaScript (for UI 
+enhancements). You are allowed to use templates/ Tailwind CSS or Bootstrap to enhance 
+the design and responsiveness of their web application.  
+• Data Storage: File Read/Write ( Read and Write to a notepad ) OR a proper MySQL/ SQL 
+DB connection 
+• Version Control: GitHub for collaborative development 
+Deliverables: 
+1. Source Code Files: All .java, .jsp, and configuration files. 
+2. Documentation: 
+o Class diagrams  
+o Final report (should include the Git repository commit history) 
+3. Viva Presentation: 
+o Each team member must explain their contribution and demonstrate its 
+functionality. 
+o Include sample data files (items.txt, users.txt, etc.) for demonstration. 
+o Should present the Git repository commit history. 
+o During the viva, the questioning will primarily focus on the backend Java code, 
+including the implementation of object-oriented concepts and file handling 
+ 
+ 
+ 
+ 
+Sample project: Online Library Management System 
+Acceptable Individual Contribution:  
+• User management (any 3 of below operations are acceptable)  
+o Register a new user (Create) 
+o Search user (Read) 
+o Update available user details (Update) 
+o Delete a user (Delete)  
+• Backend services should be implemented using jsp Servlets and d ata management 
+should be handled using file read/ writes. 
+• Minimum 3 UIs. 
+ 

@@ -38,3 +38,7 @@ build/
 *.sqlite
 *.db
 restaurant.sqlite
+
+# DOCS
+Team-Leadership-Guide.md
+project-ui

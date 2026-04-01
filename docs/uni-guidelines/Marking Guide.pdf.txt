@@ -1,0 +1,19 @@
+Student ID:
+Assessment Criteria Marks 
+Allocation Marks
+Functionality of Assigned CRUD Operations (Create, 
+Read, Update, and Delete.) 30 Marks
+Application of OOP Concepts (Encapsulation, 
+Inheritance, Polymorphism, Abstraction and 
+Information hiding) 20 Marks
+File Handling Implementation (Proper use of file 
+read/write operations for data storage.) 10 Marks
+Correct use of User Interface Design 10 Marks
+Individual Contribution & GitHub Commit History 
+(Evidence of individual work through GitHub 
+commits) 10 Marks
+Presentation & Viva Performance 10 Marks
+Documentation (Class Diagrams & Final Report) 10 Marks
+Total Marks 100 Marks
+SE1020 - Object Oriented Programming
+Project Evaluation

@@ -1,0 +1,112 @@
+SE1020 – Object Oriented Programing 
+Assignment:  Project 
+Sample for Workload Distribution 
+ 
+Project Title: Online Library Management System 
+ 
+Component 01: User Management 
+Description: Manages user-related functionalities, allowing registration, updates, and deletion 
+of user accounts. 
+CRUD Operations: 
+• Create: Register a new user and store their details in users.txt. 
+• Read: Search for a user by username or ID and display their information. 
+• Update: Modify user details like email, password, or membership type. 
+• Delete: Remove a user account from the system. 
+UI Components: 
+• User Registration Page (HTML, JSP , Bootstrap/Tailwind CSS) 
+• User Login Page 
+• User Profile Update Page 
+• User List Page (Admin View) 
+OOP Concepts Applied: 
+• Encapsulation: Secure user data in a User class with getters/setters. 
+• Inheritance: AdminUser and RegularUser classes inherit from User. 
+• Polymorphism: Different user authentication mechanisms. 
+ 
+ 
+Component 02: Book Management 
+Description: Handles the addition, modification, and removal of books in the library’s catalog. 
+ 
+CRUD Operations: 
+• Create: Add new books to books.txt with details like title, author, genre, and ISBN. 
+• Read: Search for books by title, author, or category and display results. 
+• Update: Edit book details (e.g., updating stock quantity or correcting information). 
+• Delete: Remove books that are no longer available or relevant 
+UI Components: 
+• Book Addition Form 
+• Book Search Page 
+• Book Edit Page 
+• Book Listing Page 
+OOP Concepts Applied: 
+• Encapsulation: Book class stores book details. 
+• Inheritance: EBook and PrintedBook inherit from Book. 
+• Polymorphism: Different display methods for e-books and printed books. 
+ 
+Component 03: Borrowing & Returning 
+Description: Manages the borrowing and returning of books by users, tracking due dates and 
+availability. 
+CRUD Operations: 
+• Create: Record a new borrowing transaction in borrowed_books.txt. 
+• Read: View all borrowed books and check their due dates. 
+• Update: Update the return status and calculate fines if the book is returned late. 
+• Delete: Remove completed transactions from the system once books are returned. 
+UI Components: 
+• Borrow Book Page 
+• Return Book Page 
+• Borrowed Books List 
+OOP Concepts Applied: 
+• Encapsulation: Transaction class for managing borrow/return records. 
+• Abstraction: Methods to check book availability before borrowing. 
+• Polymorphism: Different fine calculation methods for regular and premium users. 
+ 
+Component 04: Admin Management 
+Description: Manages administrative users and their privileges in the system, allowing the 
+creation and management of admin accounts 
+CRUD Operations: 
+• Create: Register a new admin account in admins.txt. 
+• Read: View a list of all admins and their activity logs. 
+• Update: Modify admin details, such as permissions or profile updates. 
+• Delete: Remove admin accounts from the system. 
+UI Components: 
+• Admin Dashboard 
+• Admin Registration Page 
+• Admin Management Panel 
+OOP Concepts Applied: 
+• Encapsulation: Secure admin data in an Admin class. 
+• Inheritance: AdminUser inherits from User. 
+• Abstraction: Admin-only methods abstracted from regular users. 
+ 
+Component 05: Author Management 
+Description: Manages authors who contribute books to the library system. 
+CRUD Operations: 
+• Create: Add new author details (name, bio, books written) to authors.txt. 
+• Read: Search and view authors by name or book title. 
+• Update: Modify author details such as biography or book list. 
+• Delete: Remove authors who are no longer relevant from the system. 
+UI Components: 
+• Author Registration Page 
+• Author List Page 
+• Author Profile Edit Page 
+OOP Concepts Applied: 
+• Encapsulation: Author class to store author details. 
+• Inheritance: Different classes for GuestAuthor and PermanentAuthor. 
+• Polymorphism: Display books differently based on author type. 
+ 
+Component 06: Feedback and Review Management 
+Description: This module allows users to submit feedback and reviews for books they have 
+borrowed. It manages the collection, display, and moderation of user reviews. 
+ 
+ 
+CRUD Operations: 
+• Create: Users can submit new reviews or feedback for books, stored in reviews.txt. 
+• Read: Display existing reviews for specific books to other users. 
+• Update: Allow users to edit their submitted reviews or ratings. 
+• Delete: Provide users and admins the option to delete inappropriate or outdated reviews. 
+UI Components: 
+• Book Review Submission Page 
+• View Book Reviews Page 
+• Admin Review Moderation Panel 
+OOP Concepts Applied: 
+• Encapsulation: Review class secures feedback data. 
+• Inheritance: PublicReview and VerifiedReview classes. 
+• Polymorphism: Different display methods for admin and regular users. 
+ 
