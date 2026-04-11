@@ -33,6 +33,14 @@ Need to double-check the 3-CRUD operations requirement from the lecturer to guar
 
 ---
 
+### 🎨 UI Prototypes
+Curious about what the final application will look like? Check out the UI prototypes here:
+- 👉 **Login Portal:** [View Here](https://isu-craz.github.io/The-Restaurant-Reservation-Platform/ui/login-portal.html)
+- 👉 **Customer Dashboard:** [View Here](https://isu-craz.github.io/The-Restaurant-Reservation-Platform/ui/customer-booking.html)
+- 👉 **Waiter Dashboard:** [View Here](https://isu-craz.github.io/The-Restaurant-Reservation-Platform/ui/waiter-dashboard.html)
+
+---
+
 ### 💻 Our Core Tech Stack
 We are keeping it modern and simple:
 - **Database Backend:** SQLite (`sqlite-jdbc` + Spring Data JPA)

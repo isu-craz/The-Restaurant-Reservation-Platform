@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Booking - RestaurantHub</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="h-screen w-full bg-gray-50 flex text-slate-900 overflow-hidden">
+
+    <!-- Sidebar Navigation -->
+    <aside class="w-64 bg-slate-50/50 border-r border-gray-200 p-4 flex flex-col shadow-sm z-10 hidden md:flex h-screen flex-shrink-0">
+        <div class="mb-8 pl-3 pt-2">
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center shadow-sm">
+                    <i data-lucide="utensils" class="w-4 h-4 text-white"></i>
+                </div>
+                <h1 class="text-xl font-bold text-gray-900">RestaurantHub</h1>
+            </div>
+            <p class="text-xs text-gray-500 font-medium tracking-wide">CUSTOMER DASHBOARD</p>
+        </div>
+
+        <nav class="flex-1 space-y-1.5">
+            <button id="nav-table-booking" onclick="switchView('table-booking')" class="w-full text-left py-3 px-3 rounded-lg flex items-center gap-3 bg-gray-900 text-white transition-all shadow-md">
+                <i data-lucide="calendar-plus" class="w-5 h-5 opacity-90"></i>
+                <div class="flex flex-col">
+                    <span class="text-sm font-medium leading-none mb-1">Book a Table</span>
+                    <span class="text-[11px] text-gray-400 font-medium leading-none">New Reservation</span>
+                </div>
+            </button>
+            <button id="nav-area-booking" onclick="switchView('area-booking')" class="w-full text-left py-3 px-3 rounded-lg flex items-center gap-3 hover:bg-gray-100 text-gray-700 transition-all">
+                <i data-lucide="layout-dashboard" class="w-5 h-5 text-gray-500"></i>
+                <div class="flex flex-col">
+                    <span class="text-sm font-medium leading-none mb-1">Area Booking</span>
+                    <span class="text-[11px] text-gray-500 font-medium leading-none">Reserve by zone</span>
+                </div>
+            </button>
+            <button id="nav-past-reservations" onclick="switchView('past-reservations')" class="w-full text-left py-3 px-3 rounded-lg flex items-center gap-3 hover:bg-gray-100 text-gray-700 transition-all">
+                <i data-lucide="history" class="w-5 h-5 text-gray-500"></i>
+                <div class="flex flex-col">
+                    <span class="text-sm font-medium leading-none mb-1">Past Reservations</span>
+                    <span class="text-[11px] text-gray-500 font-medium leading-none">History & Receipts</span>
+                </div>
+            </button>
+            <button id="nav-reviews" onclick="switchView('reviews')" class="w-full text-left py-3 px-3 rounded-lg flex items-center gap-3 hover:bg-gray-100 text-gray-700 transition-all">
+                <i data-lucide="star" class="w-5 h-5 text-gray-500"></i>
+                <div class="flex flex-col">
+                    <span class="text-sm font-medium leading-none mb-1">Reviews</span>
+                    <span class="text-[11px] text-gray-500 font-medium leading-none">Rate your experience</span>
+                </div>
+            </button>
+        </nav>
+
+        <div class="mt-4 pt-4 border-t border-gray-100 space-y-1">
+            <button class="w-full text-left py-2 px-2 hover:bg-gray-50 rounded-lg transition flex items-center gap-3 mb-2">
+                <div class="w-8 h-8 rounded-full bg-orange-100 text-orange-700 font-bold flex items-center justify-center text-xs">JD</div>
+                <div class="flex-1">
+                    <p class="text-sm font-medium text-gray-900">John Doe</p>
+                    <p class="text-xs text-gray-500 capitalize">Premium Member</p>
+                </div>
+            </button>
+            <button onclick="window.location.href='login-portal.html'" class="flex items-center gap-2 mt-auto p-2 hover:bg-red-50 text-red-600 rounded-lg group transition-colors text-left w-full">
+                <i data-lucide="log-out" class="w-4 h-4 group-hover:-translate-x-0.5 transition-transform"></i>
+                <span class="text-sm font-medium">Log out</span>
+            </button>
+        </div>
+    </aside>
+
+    <main class="flex-1 bg-gray-50 overflow-y-auto w-full p-6 relative">
+        <!-- Simulation Clock Container (Top Right) -->
+        <div class="fixed top-6 right-8 z-50">
+            <div class="flex items-center gap-3 px-3 py-2 rounded-lg bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                <div class="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center text-orange-500 border border-orange-100">
+                    <i data-lucide="clock" class="w-4 h-4"></i>
+                </div>
+                <div class="flex flex-col w-full">
+                    <div class="flex justify-between items-center mb-1">
+                        <span id="timeLabel" class="text-[10px] font-bold text-orange-600 leading-none uppercase tracking-wider">Simulated Date & Time</span>
+                        <button onclick="resetSimulation()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded text-[9px] font-bold transition">RESET</button>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="date" id="currentDateInput" class="bg-transparent text-gray-900 font-bold focus:outline-none cursor-pointer text-sm leading-none w-[110px]" onchange="updateSystemDateTime()" title="Override date">
+                        <input type="time" id="currentTimeInput" class="bg-transparent text-gray-900 font-bold focus:outline-none focus:text-orange-600 cursor-pointer text-sm leading-none" onchange="updateSystemDateTime()" title="Override time">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="max-w-6xl mx-auto pb-10 mt-10">
+
+            <!-- ================= VIEW: TABLE BOOKING ================= -->
+            <div id="view-table-booking" class="view-panel space-y-8">
+                <!-- Header -->
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-4xl font-bold text-gray-900 mb-2">Table Reservations</h1>
+                        <p class="text-gray-600">Select a table and make your reservation</p>
+                    </div>
+                </div>
+
+                <!-- Filter Card -->
+                <div class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl shadow-sm bg-card text-card-foreground">
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="mb-2 block text-sm font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Select Date</label>
+                                <input type="date" id="bookDate" class="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50" onchange="checkFilters()">
+                            </div>
+                            <div>
+                                <label class="mb-2 block text-sm font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Select Time</label>
+                                <input type="time" id="bookTime" class="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50" onchange="checkFilters()">
+                            </div>
+                            <div>
+                                <label class="mb-2 block text-sm font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Party Size</label>
+                                <input type="number" id="bookParty" min="1" max="10" value="2" class="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50" onchange="checkFilters(); renderTables();">
+                            </div>
+                        </div>
+                        <p id="filterNotice" class="text-sm text-amber-700 mt-3 flex items-center gap-2 hidden">
+                            <i data-lucide="calendar" class="w-4 h-4"></i>
+                            <span id="filterNoticeText"></span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Table Grids Container -->
+                <div id="areasContainer" class="space-y-6">
+                    <!-- Rendered by JS -->
+                </div>
+
+                <!-- My Reservations -->
+                <div id="myResSection" class="rounded-xl border bg-white text-card-foreground shadow-sm hidden">
+                    <div class="flex flex-col space-y-1.5 p-6">
+                        <h3 class="font-semibold leading-none tracking-tight text-xl">My Upcoming Reservations</h3>
+                    </div>
+                    <div class="p-6 pt-0">
+                        <div id="myResContainer" class="space-y-3">
+                            <!-- Rendered by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Info Banner -->
+                <div class="rounded-xl border bg-amber-50 text-card-foreground shadow-sm border-amber-200">
+                    <div class="p-4">
+                        <div class="flex items-start gap-3">
+                            <i data-lucide="clock" class="w-5 h-5 text-amber-600 mt-0.5"></i>
+                            <div>
+                                <h4 class="font-semibold text-amber-900 mb-1">Cancellation Policy</h4>
+                                <p class="text-sm text-amber-800">
+                                    Reservations can be cancelled up to 24 hours before the scheduled time. Cancellations made within 24 hours may incur a fee.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= VIEW: AREA BOOKING ================= -->
+            <div id="view-area-booking" class="view-panel space-y-8 hidden">
+                <div class="flex items-center justify-between">
+                    <div>
+                    <h1 class="text-4xl font-bold text-gray-900 mb-2">Area Reservations</h1>
+                    <p class="text-gray-600">Book entire areas for private events</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="rounded-xl border bg-white text-card-foreground shadow-sm border-l-4 border-l-blue-500">
+                        <div class="p-6">
+                            <div class="flex items-start gap-3">
+                            <i data-lucide="calendar" class="w-5 h-5 text-blue-600 mt-1"></i>
+                            <div>
+                                <h4 class="font-semibold text-gray-900 mb-1">Booking Window</h4>
+                                <p class="text-sm text-gray-600">Book 7 days to 1 month in advance</p>
+                            </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rounded-xl border bg-white text-card-foreground shadow-sm border-l-4 border-l-orange-500">
+                        <div class="p-6">
+                            <div class="flex items-start gap-3">
+                            <i data-lucide="clock" class="w-5 h-5 text-orange-600 mt-1"></i>
+                            <div>
+                                <h4 class="font-semibold text-gray-900 mb-1">Cancellation</h4>
+                                <p class="text-sm text-gray-600">Cancel 72 hours (3 days) before</p>
+                            </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rounded-xl border bg-white text-card-foreground shadow-sm border-l-4 border-l-green-500">
+                        <div class="p-6">
+                            <div class="flex items-start gap-3">
+                            <i data-lucide="users" class="w-5 h-5 text-green-600 mt-1"></i>
+                            <div>
+                                <h4 class="font-semibold text-gray-900 mb-1">Private Events</h4>
+                                <p class="text-sm text-gray-600">Perfect for parties & gatherings</p>
+                            </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Date Selection -->
+                <div class="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-xl shadow-sm bg-card text-card-foreground">
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="mb-2 block text-sm font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Select Date (7 days - 1 month ahead)</label>
+                                <input type="date" id="areaBookDate" class="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50">
+                            </div>
+                            <div>
+                                <label class="mb-2 block text-sm font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Number of Guests</label>
+                                <input type="number" id="areaBookParty" min="10" max="50" value="20" class="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Available Areas -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="areaBookingContainer">
+                    <!-- Rendered by JS -->
+                </div>
+
+                <!-- Policy Notice -->
+                <div class="rounded-xl border bg-blue-50 text-card-foreground shadow-sm border-blue-200 mt-8">
+                    <div class="p-4">
+                        <div class="flex items-start gap-3">
+                            <i data-lucide="alert-circle" class="w-5 h-5 text-blue-600 mt-0.5"></i>
+                            <div>
+                            <h4 class="font-semibold text-blue-900 mb-2">Area Reservation Policy</h4>
+                            <ul class="text-sm text-blue-800 space-y-1">
+                                <li>• Area reservations must be made at least 7 days in advance</li>
+                                <li>• You can book up to 1 month ahead of today</li>
+                                <li>• Cancellations must be made 72 hours (3 days) before the event</li>
+                                <li>• Individual table bookings become available after the 7-day window</li>
+                                <li>• A deposit may be required for large events</li>
+                            </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= VIEW: PAST RESERVATIONS ================= -->
+            <div id="view-past-reservations" class="view-panel space-y-8 hidden">
+                <div class="flex items-center justify-between">
+                    <div>
+                    <h1 class="text-4xl font-bold text-gray-900 mb-2">Reservation History</h1>
+                    <p class="text-gray-600">View your past reservations</p>
+                    </div>
+                    <button class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2 gap-2">
+                        <i data-lucide="download" class="w-4 h-4"></i> Export History
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="rounded-xl border bg-white text-card-foreground shadow-sm border-l-4 border-l-purple-500">
+                        <div class="p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-1">Total Reservations</p>
+                                    <p class="text-3xl font-bold text-gray-900">4</p>
+                                </div>
+                                <i data-lucide="calendar" class="w-8 h-8 text-purple-600"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rounded-xl border bg-white text-card-foreground shadow-sm border-l-4 border-l-blue-500">
+                        <div class="p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-1">Table Bookings</p>
+                                    <p class="text-3xl font-bold text-gray-900">3</p>
+                                </div>
+                                <i data-lucide="users" class="w-8 h-8 text-blue-600"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rounded-xl border bg-white text-card-foreground shadow-sm border-l-4 border-l-green-500">
+                        <div class="p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-1">Area Bookings</p>
+                                    <p class="text-3xl font-bold text-gray-900">1</p>
+                                </div>
+                                <i data-lucide="map-pin" class="w-8 h-8 text-green-600"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <!-- History Mocks -->
+                    <div class="rounded-xl border bg-white text-card-foreground shadow-sm hover:shadow-md transition-shadow">
+                        <div class="p-6">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-4 flex-1">
+                                    <div class="w-16 h-16 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white font-bold text-xl">
+                                        KP
+                                    </div>
+                                    <div class="flex-1">
+                                        <h3 class="font-bold text-lg text-gray-900 mb-1">Table Reservation</h3>
+                                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="calendar" class="w-4 h-4 text-gray-500"></i>
+                                                <div><p class="text-xs text-gray-500">Date</p><p class="text-sm font-medium">4/1/2026</p></div>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="clock" class="w-4 h-4 text-gray-500"></i>
+                                                <div><p class="text-xs text-gray-500">Time</p><p class="text-sm font-medium">19:30</p></div>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="map-pin" class="w-4 h-4 text-gray-500"></i>
+                                                <div><p class="text-xs text-gray-500">Table</p><p class="text-sm font-medium">12 - Garden Area</p></div>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="users" class="w-4 h-4 text-gray-500"></i>
+                                                <div><p class="text-xs text-gray-500">Party Size</p><p class="text-sm font-medium">4 guests</p></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col items-end gap-3 ml-4">
+                                    <span class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-green-100 text-green-800 border-green-200">Completed</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rounded-xl border bg-white text-card-foreground shadow-sm hover:shadow-md transition-shadow">
+                        <div class="p-6">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-4 flex-1">
+                                    <div class="w-16 h-16 rounded-lg bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-white font-bold text-xl">
+                                        KP
+                                    </div>
+                                    <div class="flex-1">
+                                        <h3 class="font-bold text-lg text-gray-900 mb-1">Birthday Party</h3>
+                                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="calendar" class="w-4 h-4 text-gray-500"></i>
+                                                <div><p class="text-xs text-gray-500">Date</p><p class="text-sm font-medium">3/15/2026</p></div>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="clock" class="w-4 h-4 text-gray-500"></i>
+                                                <div><p class="text-xs text-gray-500">Duration</p><p class="text-sm font-medium">18:00 - 22:00</p></div>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="map-pin" class="w-4 h-4 text-gray-500"></i>
+                                                <div><p class="text-xs text-gray-500">Area</p><p class="text-sm font-medium">Rooftop Area</p></div>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="users" class="w-4 h-4 text-gray-500"></i>
+                                                <div><p class="text-xs text-gray-500">Guests</p><p class="text-sm font-medium">35</p></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col items-end gap-3 ml-4">
+                                    <span class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-green-100 text-green-800 border-green-200">Confirmed (Past)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ================= VIEW: REVIEWS ================= -->
+            <div id="view-reviews" class="view-panel space-y-8 hidden">
+                <div class="flex items-center justify-between">
+                    <div>
+                    <h1 class="text-4xl font-bold text-gray-900 mb-2">Reviews & Feedback</h1>
+                    <p class="text-gray-600">Share your dining experience</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="rounded-xl border bg-white text-card-foreground shadow-sm border-l-4 border-l-amber-500">
+                        <div class="p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-1">Reviews Written</p>
+                                    <p class="text-3xl font-bold text-gray-900">1</p>
+                                </div>
+                                <i data-lucide="star" class="w-8 h-8 text-amber-600"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rounded-xl border bg-white text-card-foreground shadow-sm border-l-4 border-l-blue-500">
+                        <div class="p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-1">Avg Restaurant Rating</p>
+                                    <p class="text-3xl font-bold text-gray-900">5.0</p>
+                                </div>
+                                <i data-lucide="star" class="w-8 h-8 text-blue-600 fill-blue-600"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rounded-xl border bg-white text-card-foreground shadow-sm border-l-4 border-l-green-500">
+                        <div class="p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-1">Avg Service Rating</p>
+                                    <p class="text-3xl font-bold text-gray-900">4.0</p>
+                                </div>
+                                <i data-lucide="star" class="w-8 h-8 text-green-600 fill-green-600"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Your Reviews -->
+                <div class="rounded-xl border bg-white text-card-foreground shadow-sm">
+                    <div class="flex flex-col space-y-1.5 p-6">
+                        <h3 class="font-semibold leading-none tracking-tight text-xl">Your Reviews</h3>
+                    </div>
+                    <div class="p-6 pt-0">
+                        <div class="space-y-4">
+                            <div class="p-6 bg-gray-50 rounded-lg border border-gray-200 space-y-4">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <div class="mb-3">
+                                            <p class="font-semibold text-gray-900">Table 42 - Garden Area</p>
+                                            <p class="text-sm text-gray-600">3/1/2026 at 20:00</p>
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-4 mb-4">
+                                            <div>
+                                                <p class="text-sm text-gray-600 mb-1">Restaurant Rating</p>
+                                                <div class="flex gap-1 text-amber-400"><i data-lucide="star" class="w-4 h-4 fill-amber-400"></i><i data-lucide="star" class="w-4 h-4 fill-amber-400"></i><i data-lucide="star" class="w-4 h-4 fill-amber-400"></i><i data-lucide="star" class="w-4 h-4 fill-amber-400"></i><i data-lucide="star" class="w-4 h-4 fill-amber-400"></i></div>
+                                            </div>
+                                            <div>
+                                                <p class="text-sm text-gray-600 mb-1">Service Rating</p>
+                                                <div class="flex gap-1 text-amber-400"><i data-lucide="star" class="w-4 h-4 fill-amber-400"></i><i data-lucide="star" class="w-4 h-4 fill-amber-400"></i><i data-lucide="star" class="w-4 h-4 fill-amber-400"></i><i data-lucide="star" class="w-4 h-4 fill-amber-400"></i><i data-lucide="star" class="w-4 h-4 text-gray-300"></i></div>
+                                            </div>
+                                        </div>
+                                        <p class="text-gray-700 leading-relaxed">Food was amazing, atmosphere was perfect for our anniversary. Waiter was a bit slow to take drinks but otherwise exceptional service!</p>
+                                        <div class="flex items-center gap-2 mt-3">
+                                            <p class="text-xs text-gray-500">Posted 3/2/2026</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex gap-2 ml-4">
+                                        <button class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-red-50 hover:text-red-700 h-9 px-3" onclick="alert('Reviews older than 24 hours cannot be deleted.')"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Review Policy -->
+                <div class="rounded-xl border bg-blue-50 text-card-foreground shadow-sm border-blue-200 mt-8">
+                    <div class="p-4">
+                        <div class="flex items-start gap-3">
+                            <i data-lucide="alert-circle" class="w-5 h-5 text-blue-600 mt-0.5"></i>
+                            <div>
+                                <h4 class="font-semibold text-blue-900 mb-2">Review Policy</h4>
+                                <ul class="text-sm text-blue-800 space-y-1">
+                                    <li>• Reviews can only be submitted for completed reservations</li>
+                                    <li>• You can edit or delete your review within 24 hours of posting</li>
+                                    <li>• After 24 hours, reviews become permanent and cannot be modified</li>
+                                    <li>• Please be honest and constructive in your feedback</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Modal Layout -->
+    <div id="bookingModal" class="fixed inset-0 bg-black/80 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-md overflow-hidden border">
+            <div class="flex flex-col space-y-1.5 text-center sm:text-left p-6">
+                <h2 class="text-lg font-semibold leading-none tracking-tight">Confirm Reservation</h2>
+            </div>
+            <div class="p-6 pt-0 space-y-4">
+                <div class="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                    <h3 class="font-semibold text-lg mb-3">Reservation Details</h3>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between"><span class="text-gray-600">Date:</span><span id="mDate" class="font-medium"></span></div>
+                        <div class="flex justify-between"><span class="text-gray-600">Time:</span><span id="mTime" class="font-medium"></span></div>
+                        <div class="flex justify-between"><span class="text-gray-600">Table:</span><span id="mTable" class="font-medium"></span></div>
+                        <div class="flex justify-between"><span class="text-gray-600">Area:</span><span id="mArea" class="font-medium"></span></div>
+                        <div class="flex justify-between"><span class="text-gray-600">Capacity:</span><span id="mCap" class="font-medium"></span></div>
+                        <div class="flex justify-between"><span class="text-gray-600">Party Size:</span><span id="mParty" class="font-medium"></span></div>
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="closeModal()" class="flex-1 inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2 hover:bg-gray-100">Cancel</button>
+                    <button onclick="confirmBooking()" class="flex-1 inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring border border-transparent bg-amber-600 text-white shadow hover:bg-amber-700 h-9 px-4 py-2">Confirm Booking</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // SPA View Switching Logic
+        const navViews = ['table-booking', 'area-booking', 'past-reservations', 'reviews'];
+        function switchView(targetId) {
+            navViews.forEach(v => {
+                // Hide panel
+                document.getElementById('view-' + v).classList.add('hidden');
+                // Deactivate nav button
+                const btn = document.getElementById('nav-' + v);
+                btn.classList.add('hover:bg-gray-100', 'text-gray-700');
+                btn.classList.remove('bg-gray-900', 'text-white', 'shadow-md');
+                // Deactivate icon
+                btn.querySelector('svg').classList.add('text-gray-500');
+                btn.querySelector('svg').classList.remove('opacity-90');
+                
+                if(v === targetId) {
+                    // Show panel
+                    document.getElementById('view-' + v).classList.remove('hidden');
+                    // Activate nav button
+                    btn.classList.remove('hover:bg-gray-100', 'text-gray-700');
+                    btn.classList.add('bg-gray-900', 'text-white', 'shadow-md');
+                    // Activate icon
+                    btn.querySelector('svg').classList.remove('text-gray-500');
+                    btn.querySelector('svg').classList.add('opacity-90');
+                }
+            });
+        }
+
+        // Init Icons
+        lucide.createIcons();
+
+        // System Time Logic
+        let CURRENT_TIME = new Date('2026-04-06T11:30:00');
+        const savedTime = sessionStorage.getItem('simTime_customer');
+        if(savedTime) CURRENT_TIME = new Date(parseInt(savedTime));
+        
+        function formatTimeForInput(date) {
+            return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+        }
+        function formatDateForInput(date) {
+            return `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+        }
+
+        window.updateSystemDateTime = () => {
+            const dateStr = document.getElementById('currentDateInput').value || formatDateForInput(new Date('2026-04-06'));
+            const timeStr = document.getElementById('currentTimeInput').value || '11:30';
+            
+            const [year, month, day] = dateStr.split('-');
+            const [hours, mins] = timeStr.split(':');
+            
+            const newDate = new Date(parseInt(year), parseInt(month)-1, parseInt(day), parseInt(hours), parseInt(mins), 0, 0);
+            CURRENT_TIME = newDate;
+            sessionStorage.setItem('simTime_customer', CURRENT_TIME.getTime());
+
+            const nextHourDate = new Date(CURRENT_TIME);
+            nextHourDate.setHours(nextHourDate.getHours() + 1);
+            nextHourDate.setMinutes(0);
+
+            // Update constraints and values
+            document.getElementById('bookDate').min = dateStr;
+            document.getElementById('areaBookDate').min = dateStr;
+            
+            document.getElementById('bookDate').value = dateStr;
+            document.getElementById('areaBookDate').value = dateStr;
+            document.getElementById('bookTime').value = formatTimeForInput(nextHourDate);
+            
+            if(typeof checkFilters === 'function') checkFilters();
+            if(typeof renderTables === 'function') renderTables();
+            if(typeof renderAreaBookings === 'function') renderAreaBookings();
+        };
+
+        window.resetSimulation = () => {
+            sessionStorage.removeItem('simTime_customer');
+            CURRENT_TIME = new Date('2026-04-06T11:30:00');
+            const defaultDateStr = formatDateForInput(CURRENT_TIME);
+            
+            document.getElementById('currentDateInput').value = defaultDateStr;
+            document.getElementById('currentTimeInput').value = formatTimeForInput(CURRENT_TIME);
+            
+            const nextHourDate = new Date(CURRENT_TIME);
+            nextHourDate.setHours(nextHourDate.getHours() + 1);
+            nextHourDate.setMinutes(0);
+            
+            document.getElementById('bookDate').min = defaultDateStr;
+            document.getElementById('areaBookDate').min = defaultDateStr;
+            
+            document.getElementById('bookDate').value = defaultDateStr;
+            document.getElementById('areaBookDate').value = defaultDateStr;
+            document.getElementById('bookTime').value = formatTimeForInput(nextHourDate);
+            
+            if(typeof checkFilters === 'function') checkFilters();
+            if(typeof renderTables === 'function') renderTables();
+            if(typeof renderAreaBookings === 'function') renderAreaBookings();
+        };
+
+        // State Engine
+        let customerReservations = [];
+        let selectedTableId = null; 
+
+        // 50 Tables Data Array
+        const AREAS = ['Regular Area', 'Smoking Allowed Area', 'Balcony Area', 'BBQ Area', 'Garden Area'];
+        
+        const tables = [
+            { id: 't1', number: 1, area: 'Regular Area', capacity: 2 },
+            { id: 't2', number: 2, area: 'Regular Area', capacity: 2 },
+            { id: 't3', number: 3, area: 'Regular Area', capacity: 2 },
+            { id: 't4', number: 4, area: 'Regular Area', capacity: 2 },
+            { id: 't5', number: 5, area: 'Regular Area', capacity: 4 },
+            { id: 't6', number: 6, area: 'Regular Area', capacity: 4 },
+            { id: 't7', number: 7, area: 'Regular Area', capacity: 4 },
+            { id: 't8', number: 8, area: 'Regular Area', capacity: 6 },
+            { id: 't9', number: 9, area: 'Regular Area', capacity: 6 },
+            { id: 't10', number: 10, area: 'Regular Area', capacity: 6 },
+            
+            { id: 't11', number: 11, area: 'Smoking Allowed Area', capacity: 2 },
+            { id: 't12', number: 12, area: 'Smoking Allowed Area', capacity: 2 },
+            { id: 't13', number: 13, area: 'Smoking Allowed Area', capacity: 2 },
+            { id: 't14', number: 14, area: 'Smoking Allowed Area', capacity: 4 },
+            { id: 't15', number: 15, area: 'Smoking Allowed Area', capacity: 4 },
+            { id: 't16', number: 16, area: 'Smoking Allowed Area', capacity: 4 },
+            { id: 't17', number: 17, area: 'Smoking Allowed Area', capacity: 6 },
+            { id: 't18', number: 18, area: 'Smoking Allowed Area', capacity: 6 },
+            { id: 't19', number: 19, area: 'Smoking Allowed Area', capacity: 6 },
+            { id: 't20', number: 20, area: 'Smoking Allowed Area', capacity: 6 },
+            
+            { id: 't21', number: 21, area: 'Balcony Area', capacity: 2 },
+            { id: 't22', number: 22, area: 'Balcony Area', capacity: 2 },
+            { id: 't23', number: 23, area: 'Balcony Area', capacity: 4 },
+            { id: 't24', number: 24, area: 'Balcony Area', capacity: 4 },
+            { id: 't25', number: 25, area: 'Balcony Area', capacity: 4 },
+            { id: 't26', number: 26, area: 'Balcony Area', capacity: 6 },
+            { id: 't27', number: 27, area: 'Balcony Area', capacity: 6 },
+            { id: 't28', number: 28, area: 'Balcony Area', capacity: 6 },
+            { id: 't29', number: 29, area: 'Balcony Area', capacity: 8 },
+            { id: 't30', number: 30, area: 'Balcony Area', capacity: 8 },
+            
+            { id: 't31', number: 31, area: 'BBQ Area', capacity: 2 },
+            { id: 't32', number: 32, area: 'BBQ Area', capacity: 4 },
+            { id: 't33', number: 33, area: 'BBQ Area', capacity: 4 },
+            { id: 't34', number: 34, area: 'BBQ Area', capacity: 4 },
+            { id: 't35', number: 35, area: 'BBQ Area', capacity: 6 },
+            { id: 't36', number: 36, area: 'BBQ Area', capacity: 6 },
+            { id: 't37', number: 37, area: 'BBQ Area', capacity: 6 },
+            { id: 't38', number: 38, area: 'BBQ Area', capacity: 8 },
+            { id: 't39', number: 39, area: 'BBQ Area', capacity: 8 },
+            { id: 't40', number: 40, area: 'BBQ Area', capacity: 10 },
+            
+            { id: 't41', number: 41, area: 'Garden Area', capacity: 2 },
+            { id: 't42', number: 42, area: 'Garden Area', capacity: 2 },
+            { id: 't43', number: 43, area: 'Garden Area', capacity: 4 },
+            { id: 't44', number: 44, area: 'Garden Area', capacity: 4 },
+            { id: 't45', number: 45, area: 'Garden Area', capacity: 6 },
+            { id: 't46', number: 46, area: 'Garden Area', capacity: 6 },
+            { id: 't47', number: 47, area: 'Garden Area', capacity: 6 },
+            { id: 't48', number: 48, area: 'Garden Area', capacity: 8 },
+            { id: 't49', number: 49, area: 'Garden Area', capacity: 8 },
+            { id: 't50', number: 50, area: 'Garden Area', capacity: 10 }
+        ];
+
+        // Render Area Bookings
+        function renderAreaBookings() {
+            const container = document.getElementById('areaBookingContainer');
+            const date = document.getElementById('areaBookDate').value;
+
+            function getAreaColor(area) {
+                switch (area) {
+                case "Garden Area": return "from-green-400 to-green-600";
+                case "Rooftop Area": return "from-blue-400 to-blue-600";
+                case "BBQ Area": return "from-orange-400 to-orange-600";
+                case "Balcony Area": return "from-purple-400 to-purple-600";
+                default: return "from-gray-400 to-gray-600";
+                }
+            }
+
+            const activeAreas = ["BBQ Area", "Balcony Area", "Garden Area", "Rooftop Area"];
+            let html = '';
+
+            activeAreas.forEach(area => {
+                const isAvailable = true; 
+                html += `
+                    <button class="p-6 rounded-lg border-2 transition-all text-left ${date ? 'bg-white border-green-300 hover:shadow-lg hover:scale-105 cursor-pointer' : 'bg-gray-50 border-gray-300 opacity-60 cursor-not-allowed'}" ${!date ? 'disabled' : "onclick=\"alert('Area Reservation Request Submitted')\""}>
+                        <div class="w-16 h-16 rounded-lg bg-gradient-to-br ${getAreaColor(area)} flex items-center justify-center mb-3 mx-auto">
+                            <i data-lucide="map-pin" class="w-8 h-8 text-white"></i>
+                        </div>
+                        <h3 class="font-bold text-center text-gray-900 mb-3">${area}</h3>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between"><span class="text-gray-600">Capacity:</span><span class="font-semibold">20-40 guests</span></div>
+                            <div class="flex justify-between"><span class="text-gray-600">Min Duration:</span><span class="font-semibold">3 hours</span></div>
+                        </div>
+                        <div class="flex items-center justify-center gap-1 mt-4">
+                            ${date ? '<i data-lucide="check-circle-2" class="w-4 h-4 text-green-600"></i><span class="text-xs text-green-700 font-medium">Available</span>' : '<i data-lucide="x-circle" class="w-4 h-4 text-red-600"></i><span class="text-xs text-red-700 font-medium">Select date</span>'}
+                        </div>
+                    </button>
+                `;
+            });
+            container.innerHTML = html;
+            lucide.createIcons();
+        }
+        document.getElementById('areaBookDate').addEventListener('change', renderAreaBookings);
+
+        function checkFilters() {
+            const date = document.getElementById('bookDate').value;
+            const time = document.getElementById('bookTime').value;
+            const notice = document.getElementById('filterNotice');
+            const noticeText = document.getElementById('filterNoticeText');
+            
+            if(date && time) {
+                notice.classList.remove('hidden');
+                noticeText.innerText = `Showing availability for ${date} at ${time}`;
+            } else {
+                notice.classList.add('hidden');
+            }
+            renderTables();
+        }
+
+        // Render the 50 Table UI
+        function renderTables() {
+            const container = document.getElementById('areasContainer');
+            const date = document.getElementById('bookDate').value;
+            const time = document.getElementById('bookTime').value;
+            const partySize = parseInt(document.getElementById('bookParty').value) || 1;
+            
+            let html = '';
+            AREAS.forEach(area => {
+                const areaTables = tables.filter(t => t.area === area);
+                if(areaTables.length === 0) return;
+                
+                html += `
+                <div class="rounded-xl border bg-white text-card-foreground shadow-sm">
+                    <div class="flex flex-col space-y-1.5 p-6">
+                        <h3 class="font-semibold leading-none tracking-tight flex items-center gap-2 text-2xl">
+                            <i data-lucide="map-pin" class="w-5 h-5 text-amber-600" style="stroke-width: 2.5;"></i>
+                            ${area}
+                        </h3>
+                    </div>
+                    <div class="p-6 pt-0">
+                        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                `;
+
+                areaTables.forEach(t => {
+                    const capacityValid = partySize <= t.capacity;
+                    const isReservedByUser = false; 
+                    const pseudoRandomReserved = date && time ? ((t.number % 4 === 0) || (t.number % 7 === 0)) : false; 
+                    const isAvailable = date ? (!pseudoRandomReserved && capacityValid) : true;
+
+                    if (date && time) {
+                        html += `
+                                <button ${isAvailable ? `onclick="openModal('${t.id}')"` : 'disabled'}
+                                    class="relative p-4 rounded-lg border-2 transition-all ${isAvailable ? 'bg-green-50 border-green-300 hover:bg-green-100 hover:scale-105 cursor-pointer' : 'bg-red-50 border-red-300 opacity-60 cursor-not-allowed'}">
+                                    <div class="w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-2 ${isAvailable ? 'bg-green-200' : 'bg-red-200'}">
+                                        <span class="font-bold text-lg">${t.number}</span>
+                                    </div>
+                                    <div class="text-center">
+                                        <p class="text-sm font-semibold text-gray-700">${t.capacity} seats</p>
+                                        <div class="flex items-center justify-center gap-1 mt-2">
+                                            ${isAvailable ? '<i data-lucide="check-circle-2" class="w-4 h-4 text-green-600"></i><span class="text-xs text-green-700 font-medium">Available</span>' : '<i data-lucide="x-circle" class="w-4 h-4 text-red-600"></i><span class="text-xs text-red-700 font-medium">Reserved</span>'}
+                                        </div>
+                                    </div>
+                                </button>
+                        `;
+                    } else {
+                        html += `
+                                <button onclick="alert('Please select date and time first')"
+                                    class="relative p-4 rounded-lg border-2 transition-all bg-green-50 border-green-300 hover:bg-green-100 hover:scale-105 cursor-pointer">
+                                    <div class="w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-2 bg-green-200">
+                                        <span class="font-bold text-lg">${t.number}</span>
+                                    </div>
+                                    <div class="text-center">
+                                        <p class="text-sm font-semibold text-gray-700">${t.capacity} seats</p>
+                                        <div class="flex items-center justify-center gap-1 mt-2">
+                                            <i data-lucide="check-circle-2" class="w-4 h-4 text-green-600"></i>
+                                            <span class="text-xs text-green-700 font-medium">Available</span>
+                                        </div>
+                                    </div>
+                                </button>
+                        `;
+                    }
+                });
+
+                html += `</div></div></div>`;
+            });
+
+            container.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        // Modal Logic
+        function openModal(tId) {
+            const date = document.getElementById('bookDate').value;
+            const time = document.getElementById('bookTime').value;
+            const partySize = document.getElementById('bookParty').value;
+            
+            if(!date || !time) {
+                alert("Please select date and time first!");
+                return;
+            }
+
+            const table = tables.find(t => t.id === tId);
+            selectedTableId = tId;
+
+            document.getElementById('mDate').innerText = date;
+            document.getElementById('mTime').innerText = time;
+            document.getElementById('mTable').innerText = table.number;
+            document.getElementById('mArea').innerText = table.area;
+            document.getElementById('mCap').innerText = `${table.capacity} seats`;
+            document.getElementById('mParty').innerText = `${partySize} guests`;
+
+            document.getElementById('bookingModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('bookingModal').classList.add('hidden');
+            selectedTableId = null;
+        }
+
+        function confirmBooking() {
+            const date = document.getElementById('bookDate').value;
+            const time = document.getElementById('bookTime').value;
+            const partySize = document.getElementById('bookParty').value;
+            const table = tables.find(t => t.id === selectedTableId);
+
+            const newRes = {
+                id: 'r_' + Date.now(),
+                date: date,
+                time: time,
+                tableNumber: table.number,
+                area: table.area,
+                partySize: partySize,
+                status: 'Not Arrived Yet'
+            };
+
+            customerReservations.push(newRes);
+            
+            closeModal();
+            renderMyReservations();
+            
+            // To simulate the system registering it, re-render tables
+            renderTables();
+            
+            alert('Table reserved successfully!');
+        }
+
+        // Custom Bookings Render
+        function renderMyReservations() {
+            const section = document.getElementById('myResSection');
+            const container = document.getElementById('myResContainer');
+            
+            if(customerReservations.length === 0) {
+                section.classList.add('hidden');
+                return;
+            }
+            
+            section.classList.remove('hidden');
+
+            container.innerHTML = customerReservations.map(r => `
+                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:shadow-md transition-shadow">
+                    <div class="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="calendar" class="w-4 h-4 text-gray-500"></i>
+                            <div>
+                                <p class="text-xs text-gray-500">Date</p>
+                                <p class="text-sm font-medium">${r.date}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="clock" class="w-4 h-4 text-gray-500"></i>
+                            <div>
+                                <p class="text-xs text-gray-500">Time</p>
+                                <p class="text-sm font-medium">${r.time}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="map-pin" class="w-4 h-4 text-gray-500"></i>
+                            <div>
+                                <p class="text-xs text-gray-500">Table & Area</p>
+                                <p class="text-sm font-medium">${r.tableNumber} - ${r.area}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="users" class="w-4 h-4 text-gray-500"></i>
+                            <div>
+                                <p class="text-xs text-gray-500">Party Size</p>
+                                <p class="text-sm font-medium">${r.partySize} guests</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3 ml-4">
+                        <span class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${r.status==='Not Arrived Yet' ? 'bg-gray-100 text-gray-800 border-gray-200' : 'bg-green-100 text-green-800 border-green-200'}">${r.status}</span>
+                        <button onclick="cancelReservation('${r.id}')" class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-input bg-background shadow-sm hover:bg-red-50 hover:text-red-700 hover:border-red-300 h-8 px-3" title="Cancel reservation">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        function cancelReservation(id) {
+            if(confirm("Are you sure you want to cancel this reservation?")) {
+                customerReservations = customerReservations.filter(r => r.id !== id);
+                renderMyReservations();
+            }
+        }
+
+        // Init page
+        document.getElementById('currentDateInput').value = formatDateForInput(CURRENT_TIME);
+        document.getElementById('currentTimeInput').value = formatTimeForInput(CURRENT_TIME);
+
+        const simDateStr = formatDateForInput(CURRENT_TIME);
+        const nextHourDate = new Date(CURRENT_TIME);
+        nextHourDate.setHours(nextHourDate.getHours() + 1);
+        nextHourDate.setMinutes(0);
+        const simNextHourStr = formatTimeForInput(nextHourDate);
+
+        document.getElementById('bookDate').min = simDateStr;
+        document.getElementById('areaBookDate').min = simDateStr;
+        
+        document.getElementById('bookDate').value = simDateStr;
+        document.getElementById('areaBookDate').value = simDateStr;
+        document.getElementById('bookTime').value = simNextHourStr;
+
+        checkFilters(); 
+        renderAreaBookings();
+    </script>
+</body>
+</html>
