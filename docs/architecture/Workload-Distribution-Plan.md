@@ -79,12 +79,12 @@ This plan aligns with the project requirements of implementing at least 3 CRUD o
 ---
 
 ### Component 6: Walk-In & Live Occupancy (👤 Member 6)
-**Description:** Overcomes the "Double-Booking" problem by allowing Admins to lock tables for spontaneous guests that arrive without an online account.
+**Description:** Overcomes the "Double-Booking" problem by allowing Waiters to lock tables for spontaneous guests that arrive without an online account.
 **CRUD Operations (Table: `walk_ins`):**
-*   **Create:** Admin sits a physical family down and assigns them a table locking it in real time.
-*   **Read:** Admin views a dashboard of currently occupied Walk-In tables.
-*   **Update:** Admin updates the Walk-in party size if more friends arrive.
-*   **Delete:** Admin clicks "Checkout" which deletes the Walk-in and frees the table for online bookings.
+*   **Create:** Waiter locks down a table from the Walk-in iPad interface instantly.
+*   **Read:** Waiter views a dashboard of currently occupied Walk-In tables.
+*   **Update:** Waiter updates the Walk-in party size if more friends arrive.
+*   **Delete:** Waiter clicks "Checkout" which deletes the Walk-in and frees the table for online bookings.
 **OOP Concepts:**
 *   **Polymorphism:** A `WalkIn` class bypassing the standard `User` requirement, heavily leveraging decoupled Foreign Keys (`@ManyToOne` with `tables`).
 **UI Components:** Master FOH (Front-Of-House) iPad Dashboard, Lock Table Form.

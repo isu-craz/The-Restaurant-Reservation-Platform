@@ -17,9 +17,8 @@ If you have the student-free "Ultimate" version of IntelliJ, this is the most pr
    - **Group:** `com.se1020`
    - **Artifact:** `restaurant-platform`
    - **Package name:** `com.se1020.restaurant`
-4. Click **Next** and select these 3 dependencies:
+4. Click **Next** and select these 2 dependencies:
    - `Spring Web`
-   - `Thymeleaf`
    - `Spring Data JPA`
 5. Click **Create**. IntelliJ will instantly build your entire folder structure for you.
 
@@ -27,7 +26,7 @@ If you have the student-free "Ultimate" version of IntelliJ, this is the most pr
 If you are using the Community Edition of IntelliJ or a different editor:
 
 1. Go to **[https://start.spring.io/](https://start.spring.io/)**
-2. Select: **Maven**, **Java 17**, and the 3 dependencies listed above.
+2. Select: **Maven**, **Java 17**, and the 2 dependencies listed above.
 3. Click **GENERATE**, download the `.zip`, and extract it into your project folder.
 
 ---

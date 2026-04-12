@@ -16,28 +16,30 @@ Your Database Models (`User`, `Table`, `Review`) are just the raw food ingredien
 The Chef's only job is to open the fridge and grab ingredients. 
 When your code says `userRepository.findAll()`, that is the Chef opening the SQLite fridge and grabbing every single `User` ingredient inside of it.
 
-### 3. The Waiter (`UserController.java`)
+### 3. The Waiter (`UserController.java` as a `@RestController`)
 The Waiter is the bridge between the Kitchen and the Customer! The Waiter never cooks the food (no database logic), and the Waiter never eats the food (no HTML logic). The Waiter just carries it.
-*   **`@Controller`**: This tag tells Spring Boot, *"Hey, this Java class is a Waiter!"*
-*   **`@GetMapping("/users")`**: This is the Waiter figuring out which table to walk to! When someone types `localhost:8080/users`, the Waiter walks over.
+*   **`@RestController`**: This tag tells Spring Boot, *"Hey, this Java class is a Waiter that serves raw Data!"*
+*   **`@GetMapping("/api/users")`**: This is the Waiter figuring out which table to walk to! When the Javascript asks for `/api/users`, the Waiter walks over.
 
-### 4. The Waiter's Serving Tray (`Model model`)
-When the Waiter (`UserController`) asks the Chef (`UserRepository`) for the food, the Waiter needs something to carry it on! 
-That is what the `Model` is! It is a literal serving tray.
+### 4. The Waiter's Delivery Box (JSON format)
+When the Waiter (`UserController`) asks the Chef (`UserRepository`) for the food, the Waiter boxes it up! 
+The Waiter packages the Java data into a universal format called **JSON**.
 ```java
-// "Hey serving tray (Model), add this plate to the tray. Call it 'users'."
-model.addAttribute("users", userRepository.findAll()); 
+// "Hey Chef, grab the users and hand them directly to whoever asked!"
+return userRepository.findAll(); 
 ```
 
-### 5. The Dining Table (`list-users.html`)
-The Waiter walks out and places the tray on the dining table (the HTML file). 
-Now, your HTML file can finally see the data using the Thymeleaf library.
+### 5. The Customer Unboxing It (`list-users.html`)
+The Waiter drops the JSON box at the table (the HTML file). 
+Now, your HTML file unboxes the data using a JavaScript `fetch()` command and puts it on the screen.
 
 ```html
-<!-- "Hey HTML, take the 'users' plate off the serving tray, and loop through them!" -->
-<tr th:each="user : ${users}">
-    <td th:text="${user.username}">JohnDoe</td>
-</tr>
+<!-- "Hey Javascript, grab the box from the Waiter, unpack the JSON, and build the list!" -->
+<script>
+    fetch('/api/users')
+        .then(res => res.json())
+        .then(users => console.log(users));
+</script>
 ```
 
 ---
@@ -46,4 +48,4 @@ Now, your HTML file can finally see the data using the Thymeleaf library.
 
 If your team asks you how `Component 1` works tomorrow, tell them to read this file. Then simply say:
 
-> *"Guys, it's actually really simple. The `Repository` goes into SQLite and grabs the data. The `Controller` acts as a middle-man, puts the data onto a `Model` serving tray, and then hands that tray to the `HTML` file so Thymeleaf can print it on the screen! You literally just have to copy my `UserController` and change the word 'User' to 'Table'!"*
+> *"Guys, it's actually really simple. The `Repository` goes into SQLite and grabs the data. The `RestController` acts as a middle-man, converts that Java data into a JSON box, and hands it out. Then, our `HTML` files use Vanilla Javascript to fetch that JSON box and paint it on the screen! You literally just have to copy my `UserController` and change the word 'User' to 'Table'!"*

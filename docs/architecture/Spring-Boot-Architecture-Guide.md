@@ -24,11 +24,12 @@ restaurant-platform/
 │   │       │   ├── css/style.css
 │   │       │   └── images/logo.png
 │   │       │
-│   │       ├── templates/               <-- 🌐 ALL HTML FILES GO HERE!
+│   │       ├── static/                  <-- 🌐💻 ALL HTML, CSS, & JS FILES GO HERE!
+│   │       │   ├── css/style.css
+│   │       │   ├── js/app.js
+│   │       │   ├── images/logo.png
 │   │       │   ├── index.html
-│   │       │   ├── login.html
 │   │       │   └── dashboard.html
-│   │       │
 │   │       └── application.properties   <-- ⚙️ CONFIG (Database passwords, ports)
 │
 ├── pom.xml                              <-- 📦 DEPENDENCIES (Where we put SQLite)
@@ -42,42 +43,43 @@ restaurant-platform/
 If you want to send a user's name from your Java database straight into your HTML screen, you use a **Controller**. Think of the Controller as the "Traffic Cop" sitting between Java and HTML.
 
 ### 1. The HTML (The View)
-You put your HTML inside `src/main/resources/templates/home.html`. 
-Because we installed **Thymeleaf**, you can write special `th:text` tags inside your normal HTML to automatically accept variables from Java:
+You put your HTML inside `src/main/resources/static/home.html`. 
+Because we use **Vanilla JavaScript**, you write a standard HTML file that fetches data from the backend:
 ```html
 <!DOCTYPE html>
 <html>
 <body>
-    <!-- The $ tells HTML to wait for Java to send a variable called "userName" -->
-    <h1 th:text="${userName}">Default Name</h1>
+    <!-- JS will inject the data here later -->
+    <h1 id="userNameDisplay">Loading...</h1>
+    <script>
+        fetch('/api/home/user')
+            .then(r => r.json())
+            .then(data => document.getElementById('userNameDisplay').innerText = data.name);
+    </script>
 </body>
 </html>
 ```
 
-### 2. The Java (The Controller)
+### 2. The Java (The REST Controller)
 You put your Java inside `src/main/java/com/se1020/restaurant/controllers/HomeController.java`.
-The Java code intercepts the web browser, grabs data from the database, and injects it into the HTML dynamically:
+The Java code intercepts the web API request and returns raw JSON data:
 ```java
-@Controller
+@RestController
 public class HomeController {
 
-    // When the user goes to "localhost:8080/home" in their browser...
-    @GetMapping("/home")
-    public String showHomePage(Model model) {
+    // When the JS fetches "localhost:8080/api/home/user"...
+    @GetMapping("/api/home/user")
+    public String showHomePage() {
         
         // 1. Grab data (Imagine this came from your SQLite Database)
         String nameFromDatabase = "Admin Team Leader";
         
-        // 2. Send the data to the HTML file under the variable name "userName"
-        model.addAttribute("userName", nameFromDatabase);
-        
-        // 3. Tell Spring Boot to open "home.html" and stitch them together!
-        return "home"; 
+        // 2. Return the data as JSON
+        return "{\"name\": \"" + nameFromDatabase + "\"}"; 
     }
 }
 ```
 
 That's the entire magic trick! 
-- Java calculates the logic in `java/`
-- HTML displays the logic in `resources/templates/`
-- CSS makes the HTML look pretty in `resources/static/`
+- Java calculates the logic in `java/` and serves JSON APIs.
+- HTML and JS displays the UI and fetches the data in `resources/static/`

@@ -39,16 +39,23 @@ Spring Boot tries to start a second web server, but your first server is secretl
 
 **The Fix:** You must always hit the solid **Red Square Stop Button** in IntelliJ IDEA to kill the first server before you hit the green Play button again.
 
-## 4. The HTML Variable Trap (`${}`)
-When your Java `@Controller` sends variables (like a User's Name) to your HTML file, you cannot just print the variable normally. You must use the Thymeleaf `th:text="${...}"` syntax.
+## 4. The HTML Variable Trap (`fetch().then()`)
+When your Java `@RestController` sends variables (like a User's Name) as JSON to your HTML file, you cannot just print the variable normally inside HTML tags. You must use JavaScript `fetch` to ask for it, and then modify the DOM.
 
-**❌ Wrong (Standard HTML):**
-`<p>Welcome, userName!</p>`
+**❌ Wrong (Standard HTML Expecting Magic):**
+`<p>Welcome, {userName}!</p>`
 
-**✅ Right (Thymeleaf HTML):**
-`<p th:text="${userName}">Welcome!</p>`
+**✅ Right (Vanilla JS API Fetch):**
+```html
+<p id="welcomeText">Loading...</p>
+<script>
+    fetch('/api/user/info')
+        .then(res => res.json())
+        .then(data => document.getElementById('welcomeText').innerText = "Welcome, " + data.userName + "!");
+</script>
+```
 
-*(The `$` tells the HTML to listen to the Java server for that variable).*
+*(JavaScript fetches the JSON payload from your Java REST Controller and injects it).*
 
 ---
 Keep this cheatsheet open when you start typing your first Java components. It will save you and your team hours of confusion!

@@ -12,7 +12,7 @@ When deciding what tools to use for this project, we needed a balance between fu
 
 *   **Java & Spring Boot:** The project documentation clearly stated we must develop a web application using Java technologies. While we could have built it using raw JSP and Servlets, using **Spring Boot** is a much better choice. It is the modern industry standard, and it automatically handles a lot of the complicated web setup, allowing us to just focus on writing our core OOP logic.
 *   **Data Storage (SQLite Database):** Since it's our first project, trying to set up and connect a complex external SQL server like MySQL would be very hard. However, we are allowed to use a Database connection. Therefore, saving our data to a simple local `sqlite.db` file using Spring Data JPA is an incredibly easy choice that perfectly fits the requirements and saves us from writing hundreds of lines of manual file reading code.
-*   **HTML, CSS & Thymeleaf:** For the front end, we are keeping it straightforward. We will use templates (like Tailwind or Bootstrap) for a clean User Interface. To connect our Java data to the HTML, we are using a tool called **Thymeleaf**, which is built right into Spring Boot.
+*   **HTML, CSS & Vanilla JavaScript:** For the front end, we are keeping it straightforward. We will use templates (like Tailwind or Bootstrap) for a clean User Interface. We will build a decoupled Single Page Application (SPA)-style architecture using Vanilla JavaScript and `fetch()` to call our Java REST APIs.
 
 ## 2. Workload Distribution & Project Scope
 We have a team of 6 members. We cannot have one person do "all the HTML" and another do "all the Java." That will cause massive delays and unfair grading.
