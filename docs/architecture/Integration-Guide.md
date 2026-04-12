@@ -13,7 +13,7 @@ Here is our exact, step-by-step roadmap from day one to the final submission.
 Before anyone writes a single line of code, the Team Leader creates the foundation.
 
 1. **Spring Initializr:** The Team Leader generates a blank Spring Boot project using [start.spring.io](https://start.spring.io).
-2. **The Golden Dependencies:** They add `Spring Web`, `Thymeleaf`, and crucially, `Spring Data JPA`.
+2. **The Golden Dependencies:** They add `Spring Web` and crucially, `Spring Data JPA`.
 3. **The Database:** They manually add the `sqlite-jdbc` dependency to the `pom.xml` file.
 4. **GitHub:** The Team Leader uploads this blank, perfectly working "skeleton" to GitHub. Now, all 6 members clone this exact same starting point to their laptops.
 

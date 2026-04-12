@@ -46,6 +46,6 @@ We are keeping it modern and simple:
 - **Database Backend:** SQLite (`sqlite-jdbc` + Spring Data JPA)
 - **Framework:** Spring Boot 3
 - **Language:** Java 17
-- **Frontend Views:** HTML/CSS with standard Thymeleaf templates
+- **Frontend Views:** Single Page Application interface using standard HTML/Tailwind CSS and Vanilla JavaScript `fetch` APIs.
 
 **Let's write some code and build something we can be incredibly proud of!** 🔥

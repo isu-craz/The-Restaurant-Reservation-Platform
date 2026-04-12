@@ -1,133 +1,155 @@
-# 🔁 How to Build Your Component (Copy-Paste Template Guide)
+# 🏗️ How to Build Component 4: Reservation Management (Leader Guide)
 
-This is the most important guide in the entire project. Read this before you write a single line of code.
+Because Component 4 is the massive brain of this application, you need to build it very methodically. This component is also responsible for guaranteeing your team gets full **Inheritance and Polymorphism** marks from the university!
 
-**Before you start — read this first.**
-
-If you are new to team projects, you might feel like using someone else's code as a starting point is "cheating" or "lazy". It is actually the opposite.
-
-In real software companies like Google, Facebook, and Amazon, senior engineers deliberately build a **"template component"** first. Then every other developer on the team copies that template and adapts it for their own feature. This practice has an official name in the industry: it is called building a **"Reference Implementation"** or a **"Golden Template"**.
-
-Why do professional teams do this?
-- ✅ It keeps the entire codebase consistent (all files look the same, easy to read)
-- ✅ It avoids mistakes (if the template is correct, all copies start correct)
-- ✅ It is dramatically faster (you spend time on logic, not boilerplate setup)
-
-**The skill is not in typing code from zero. The skill is in understanding what to change and why.**
-
-When you copy `UserController.java` and adapt it into `RestaurantController.java`, you are doing exactly what a junior developer at a real company does on their first week. You are reading existing code, understanding its structure, and modifying it to solve a new problem. That is genuine software engineering.
-
-
-
-The Team Leader has already built **Component 1 (User Management)** as the master template. You can find the existing files right now inside the project at these exact locations:
-
-| Component 1 File to Copy | Find it here |
-|---|---|
-| `User.java` | `src/main/java/com/se1020/restaurant/models/User.java` |
-| `UserRepository.java` | `src/main/java/com/se1020/restaurant/repositories/UserRepository.java` |
-| `UserController.java` | `src/main/java/com/se1020/restaurant/controllers/UserController.java` |
-| `list-users.html` | `src/main/resources/templates/users/list-users.html` |
-| `add-user.html` | `src/main/resources/templates/users/add-user.html` |
-| `edit-user.html` | `src/main/resources/templates/users/edit-user.html` |
-
-Open any of those files in IntelliJ, copy the entire content, paste it into a new file with your component's name, and then replace every occurrence of `User`/`user`/`users` with your own component name. The templates in this guide below will also walk you through which lines to change.
+Follow these 4 phases exactly to build your code.
 
 ---
 
-## What You Are Building
+## Phase 1: The "Fake" Table Stub
+Because a `Reservation` requires a table to be booked, you need the `Table.java` class to exist. If Member 3 hasn't finished the Table component yet, you can create a "Stub" (a fake, temporary class) just so your code compiles.
 
-Every team member must build exactly **4 files** for their component:
+Create this file in **`src/main/java/com/se1020/restaurant/models/Table.java`**:
+```java
+package com.se1020.restaurant.models;
 
-| File | What it is | Where it goes |
-|---|---|---|
-| `YourModel.java` | The Database blueprint | `src/main/java/com/se1020/restaurant/models/` |
-| `YourRepository.java` | The database connector | `src/main/java/com/se1020/restaurant/repositories/` |
-| `YourController.java` | The logic + routing | `src/main/java/com/se1020/restaurant/controllers/` |
-| `list-yours.html` | The View Dashboard | `src/main/resources/templates/yours/` |
-| `add-yours.html` | The Create Form | `src/main/resources/templates/yours/` |
-| `edit-yours.html` | The Edit Form | `src/main/resources/templates/yours/` |
+import jakarta.persistence.*;
 
-### The Golden Folder Map
-If you are confused about where those folders actually live, here is the exact visual map of the Spring Boot structure. **If you put a file in the wrong folder, your component will not load!**
+@Entity
+@jakarta.persistence.Table(name = "tables") // Renamed so it doesn't conflict with SQL keyword
+public class Table {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-```text
-restaurant-platform/
-├── src/
-│   ├── main/
-│   │   ├── java/com/se1020/restaurant/  <-- ☕ ALL JAVA CODE GOES HERE!
-│   │   │   ├── models/                  (Your YourModel.java)
-│   │   │   ├── repositories/            (Your YourRepository.java)
-│   │   │   ├── controllers/             (Your YourController.java)
-│   │   │
-│   │   └── resources/
-│   │       ├── templates/               <-- 🌐 ALL HTML FILES GO HERE!
-│   │       │   └── yours/
-│   │       │       ├── list-yours.html
-│   │       │       ├── add-yours.html
-│   │       │       └── edit-yours.html
+    // You literally don't need to add anything else! Member 3 will finish this later.
+    // Be sure to generate a Getter/Setter for the ID:
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+}
 ```
 
 ---
 
-## Step 1: Build Your Model (The Database Blueprint)
+## Phase 2: The Core OOP Models (Your Grading Arsenal)
 
-1.  **Duplicate the Template:** Find `src/main/java/com/se1020/restaurant/models/User.java`. Copy the file and paste it into the same folder, naming it after your component (e.g., `Table.java` or `Review.java`).
-2.  **Find & Replace:** Open your new file in IntelliJ. Press `Cmd+R` (Mac) or `Ctrl+R` (Windows):
-    -   Replace `users` with `tables` (lowercase plural).
-    -   Replace `User` with `Table` (capitalized singular).
-3.  **Customize Variables:** Delete any User-specific fields (like `username`) and add your own variables (like `private int seatingCapacity;`). 
-4.  **Update Getters/Setters:** Ensure you create standard getters and setters for every new variable you added!
+This is where you get the university marks! We are going to build an Interface, a Parent class, and a Child class.
+
+### 1. The Interface (Polymorphism)
+Create a file at **`src/main/java/com/se1020/restaurant/models/Discountable.java`**:
+```java
+package com.se1020.restaurant.models;
+
+public interface Discountable {
+    double applyDiscount(double basePrice);
+}
+```
+
+### 2. The Parent Class (Inheritance)
+Create **`src/main/java/com/se1020/restaurant/models/Reservation.java`**.
+*Notice how we use `@ManyToOne` to link this reservation to your `User` and `Table`!*
+```java
+package com.se1020.restaurant.models;
+
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
+
+@Entity
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE) // Required so children save to SQL
+public class Reservation {
+    
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private int partySize;
+    private LocalDateTime bookingTime;
+    
+    // The magical links to other components!
+    @ManyToOne
+    private User customer;
+
+    @ManyToOne
+    private Table bookedTable;
+
+    // TODO: Right click -> Generate -> Getters and Setters for all variables!
+}
+```
+
+### 3. The Child Class (Inheritance + Polymorphism)
+Create **`src/main/java/com/se1020/restaurant/models/VIPReservation.java`**.
+*Notice how it `extends` Reservation and `implements` Discountable! This is exactly what your professor wants to see.*
+```java
+package com.se1020.restaurant.models;
+
+import jakarta.persistence.Entity;
+
+@Entity
+public class VIPReservation extends Reservation implements Discountable {
+    
+    private String specialRequest; // Only VIPs get to make special requests!
+
+    // Implement the Interface logic
+    @Override
+    public double applyDiscount(double basePrice) {
+        // VIPs get 15% off their booking fee!
+        return basePrice * 0.85; 
+    }
+
+    // TODO: Right click -> Generate -> Getters and Setters
+}
+```
 
 ---
 
-## Step 2: Build Your Repository (The Database Connector)
+## Phase 3: The Data Flow (SQLite Access)
 
-This file is only **1 line of real code**!
+Now you just need to tell Spring Boot to generate the SQLite queries for you.
 
-1.  **Duplicate the Template:** Find `UserRepository.java`. Copy and paste it into the `repositories/` folder, naming it `TableRepository.java`.
-2.  **Find & Replace:** Open the file and replace `User` with `Table`. 
-3.  **Check Imports:** Ensure the import at the top points to your new model: `import com.se1020.restaurant.models.Table;`.
+Create **`src/main/java/com/se1020/restaurant/repositories/ReservationRepository.java`**:
+```java
+package com.se1020.restaurant.repositories;
 
----
+import com.se1020.restaurant.models.Reservation;
+import org.springframework.data.jpa.repository.JpaRepository;
 
-## Step 3: Build Your Controller (The Logic)
-
-This file satisfies the **university rubric's \"Minimum 3 CRUD operations\"** requirement!
-
-1.  **Duplicate the Template:** Find `UserController.java`. Copy and paste it into the `controllers/` folder, naming it `TableController.java`.
-2.  **Find & Replace:** Press `Cmd+R` or `Ctrl+R` and swap everything:
-    -   Replace `\"/users\"` with `\"/tables\"`.
-    -   Replace `userRepository` with `tableRepository`.
-    -   Replace `User` with `Table`.
-3.  **Verify the Update Method:** In the `updateTable` method, ensure you are copying every single one of your custom variables (e.g., `existing.setCapacity(updated.getCapacity());`).
+public interface ReservationRepository extends JpaRepository<Reservation, Long> {
+    // Spring Boot writes all the SQL instantly! You don't need to add anything.
+}
+```
 
 ---
 
-## Step 4: Build Your 3 HTML Pages (The UI)
+## Phase 4: The Controller & HTML
 
-**Do NOT write HTML from scratch!** The Team Leader has already built a beautiful, responsive UI using Tailwind CSS. If you write your own HTML, perfectly good code will look ugly and your component will fail the design consistency check.
+Finally, create the Controller that handles the web traffic!
 
-Instead, follow these exact steps:
+Create **`src/main/java/com/se1020/restaurant/controllers/ReservationController.java`**:
+```java
+package com.se1020.restaurant.controllers;
 
-1. Go to `src/main/resources/templates/users/`
-2. **Copy** the 3 `.html` files (`list-users.html`, `add-user.html`, `edit-user.html`)
-3. Create a new folder for your component (e.g. `src/main/resources/templates/tables/`)
-4. **Paste** the 3 files inside and rename them to match your component (e.g. `list-tables.html`).
-5. Open each file and do a simple "Find & Replace" (Ctrl+R or Cmd+R in IntelliJ):
-   - Replace `user` with `table` (lowercase)
-   - Replace `users` with `tables` (plural)
-   - Replace `User` with `Table` (capitalized)
-6. **IMPORTANT:** Look at the table columns and the `<input th:field="*{...}">` tags. Update those variable names to actually match the ones you wrote in your `YourModel.java` file!
+import com.se1020.restaurant.models.Reservation;
+import com.se1020.restaurant.repositories.ReservationRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 
----
+@RestController
+@RequestMapping("/api/reservations")
+public class ReservationController {
 
-## Final Checklist Before Committing to GitHub
+    @Autowired
+    private ReservationRepository reservationRepository;
 
-- [ ] My Model has `@Entity` at the top and an empty constructor `public MyModel() {}`
-- [ ] My Repository extends `JpaRepository<MyModel, Integer>`
-- [ ] My Controller has at least 3 CRUD operations (Read, Create, Delete)
-- [ ] I copied the 3 Tailwind HTML templates into `src/main/resources/templates/mycomponent/`
-- [ ] 🔴 **Crucial:** I pressed the **Red Stop Button** and **Green Play Button** in IntelliJ to restart my server!
-- [ ] 🔄 **Maven Sync:** If I added any dependencies, I right-clicked `pom.xml` -> Maven -> Reload Project.
-- [ ] I verified my `@RequestMapping` URL (e.g., `/tables`) and visited it at `http://localhost:8080/tables`.
-- [ ] I committed my work using `git add .` and `git commit -m "message"`
+    // When the JS fetch calls http://localhost:8080/api/reservations
+    @GetMapping
+    public List<Reservation> getAllReservations() {
+        return reservationRepository.findAll();
+    }
+}
+```
+
+### The Front-End Step:
+To finish your component, take the `customer-booking.html` code from the `docs/project-ui/html-prototypes/` folder, drop it into `src/main/resources/static/`, and use Vanilla JS `fetch()` to call your `@RestController` to save the data!

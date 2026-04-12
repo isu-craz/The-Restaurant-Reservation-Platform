@@ -82,57 +82,38 @@ package com.se1020.restaurant.controllers;
 import com.se1020.restaurant.models.User;
 import com.se1020.restaurant.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
-@Controller
-@RequestMapping("/users")
+@RestController
+@RequestMapping("/api/users")
 public class UserController {
 
     @Autowired
     private UserRepository userRepository;
 
     @GetMapping("")
-    public String listUsers(Model model) {
-        model.addAttribute("users", userRepository.findAll());
-        return "users/list-users"; 
-    }
-
-    @GetMapping("/add")
-    public String showAddForm(Model model) {
-        model.addAttribute("user", new User());
-        return "users/add-user";
+    public List<User> listUsers() {
+        return userRepository.findAll();
     }
 
     @PostMapping("/add")
-    public String saveUser(@ModelAttribute("user") User user) {
-        // Enforce the default role so we don't crash
+    public User saveUser(@RequestBody User user) {
         user.setRole("CUSTOMER");
-        userRepository.save(user); 
-        return "redirect:/users";
+        return userRepository.save(user); 
     }
 
-    @GetMapping("/edit/{id}")
-    public String showEditForm(@PathVariable Integer id, Model model) {
-        User existingUser = userRepository.findById(id).orElseThrow();
-        model.addAttribute("user", existingUser);
-        return "users/edit-user";
-    }
-
-    @PostMapping("/edit/{id}")
-    public String updateUser(@PathVariable Integer id, @ModelAttribute("user") User updatedUser) {
+    @PutMapping("/edit/{id}")
+    public User updateUser(@PathVariable Integer id, @RequestBody User updatedUser) {
         User existingUser = userRepository.findById(id).orElseThrow();
         existingUser.setUsername(updatedUser.getUsername());
         existingUser.setEmail(updatedUser.getEmail());
-        userRepository.save(existingUser);
-        return "redirect:/users";
+        return userRepository.save(existingUser);
     }
 
-    @GetMapping("/delete/{id}")
-    public String deleteUser(@PathVariable Integer id) {
+    @DeleteMapping("/delete/{id}")
+    public void deleteUser(@PathVariable Integer id) {
         userRepository.deleteById(id);
-        return "redirect:/users";
     }
 }
 ```
@@ -141,12 +122,12 @@ public class UserController {
 
 ## 4. The HTML Templates
 
-Create these three files inside: `src/main/resources/templates/users/` *(you must create the `users` folder!)*
+Create these three files inside: `src/main/resources/static/users/` *(you must create the `users` folder inside static!)*
 
 ### `list-users.html`
 ```html
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html>
 <head>
     <meta charset="UTF-8">
     <title>User Management Dashboard</title>
@@ -193,7 +174,7 @@ Create these three files inside: `src/main/resources/templates/users/` *(you mus
 ### `add-user.html`
 ```html
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html>
 <head>
     <meta charset="UTF-8">
     <title>Add New User</title>
@@ -228,7 +209,7 @@ Create these three files inside: `src/main/resources/templates/users/` *(you mus
 ### `edit-user.html`
 ```html
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html>
 <head>
     <meta charset="UTF-8">
     <title>Edit User</title>
