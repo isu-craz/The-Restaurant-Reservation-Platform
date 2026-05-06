@@ -1,0 +1,1507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Booking - RestaurantHub</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="h-screen w-full bg-gray-50 flex text-slate-900 overflow-hidden">
+
+<!-- Sidebar Navigation -->
+<aside class="w-64 bg-slate-50/50 border-r border-gray-200 p-4 flex flex-col shadow-sm z-10 hidden md:flex h-screen flex-shrink-0">
+    <div class="mb-8 pl-3 pt-2">
+        <div class="flex items-center gap-3 mb-2">
+            <div class="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center shadow-sm">
+                <i data-lucide="utensils" class="w-4 h-4 text-white"></i>
+            </div>
+            <h1 class="text-xl font-bold text-gray-900">RestaurantHub</h1>
+        </div>
+        <p class="text-xs text-gray-500 font-medium tracking-wide">CUSTOMER DASHBOARD</p>
+    </div>
+
+    <nav class="flex-1 space-y-1.5">
+        <button id="nav-table-booking" onclick="switchView('table-booking')" class="w-full text-left py-3 px-3 rounded-lg flex items-center gap-3 bg-gray-900 text-white transition-all shadow-md">
+            <i data-lucide="calendar-plus" class="w-5 h-5 opacity-90"></i>
+            <div class="flex flex-col">
+                <span class="text-sm font-medium leading-none mb-1">Book a Table</span>
+                <span class="text-[11px] text-gray-400 font-medium leading-none">New Reservation</span>
+            </div>
+        </button>
+        <button id="nav-area-booking" onclick="switchView('area-booking')" class="w-full text-left py-3 px-3 rounded-lg flex items-center gap-3 hover:bg-gray-100 text-gray-700 transition-all">
+            <i data-lucide="layout-dashboard" class="w-5 h-5 text-gray-500"></i>
+            <div class="flex flex-col">
+                <span class="text-sm font-medium leading-none mb-1">Area Booking</span>
+                <span class="text-[11px] text-gray-500 font-medium leading-none">Reserve by zone</span>
+            </div>
+        </button>
+        <button id="nav-past-reservations" onclick="switchView('past-reservations')" class="w-full text-left py-3 px-3 rounded-lg flex items-center gap-3 hover:bg-gray-100 text-gray-700 transition-all">
+            <i data-lucide="history" class="w-5 h-5 text-gray-500"></i>
+            <div class="flex flex-col">
+                <span class="text-sm font-medium leading-none mb-1">Past Reservations</span>
+                <span class="text-[11px] text-gray-500 font-medium leading-none">History & Receipts</span>
+            </div>
+        </button>
+        <button id="nav-reviews" onclick="switchView('reviews')" class="w-full text-left py-3 px-3 rounded-lg flex items-center gap-3 hover:bg-gray-100 text-gray-700 transition-all">
+            <i data-lucide="star" class="w-5 h-5 text-gray-500"></i>
+            <div class="flex flex-col">
+                <span class="text-sm font-medium leading-none mb-1">Reviews</span>
+                <span class="text-[11px] text-gray-500 font-medium leading-none">Rate your experience</span>
+            </div>
+            </div>
+        </button>
+    </nav>
+
+    <div class="mt-4 pt-4 border-t border-gray-100 space-y-1">
+        <!-- User Profile Area (Bottom) -->
+        <button id="nav-profile-settings" onclick="switchView('profile-settings')" class="w-full mt-auto p-3 hover:bg-gray-100 rounded-xl transition-colors text-left flex items-center gap-3 border border-transparent hover:border-gray-200 text-gray-700">
+            <div id="sidebarInitials" class="w-8 h-8 rounded-full bg-orange-100 text-orange-700 font-bold flex items-center justify-center text-xs">U</div>
+            <div class="flex-1">
+                <p id="sidebarFullName" class="text-sm font-medium text-inherit">User</p>
+                <p class="text-xs opacity-75 capitalize">Premium Member</p>
+            </div>
+        </button>
+        <button onclick="localStorage.clear(); window.location.replace('/login');" class="flex items-center gap-2 mt-auto p-2 hover:bg-red-50 text-red-600 rounded-lg group transition-colors text-left w-full">
+            <i data-lucide="log-out" class="w-4 h-4 group-hover:-translate-x-0.5 transition-transform"></i>
+            <span class="text-sm font-medium">Log out</span>
+        </button>
+    </div>
+</aside>
+
+<main class="flex-1 bg-gray-50 overflow-y-auto w-full p-6 relative">
+    <!-- Simulation Clock Container (Top Right) -->
+    <div class="fixed top-6 right-8 z-50">
+        <div class="flex items-center gap-3 px-3 py-2 rounded-lg bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+            <div class="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center text-orange-500 border border-orange-100">
+                <i data-lucide="clock" class="w-4 h-4"></i>
+            </div>
+            <div class="flex flex-col w-full">
+                <div class="flex justify-between items-center mb-1">
+                    <span id="timeLabel" class="text-[10px] font-bold text-orange-600 leading-none uppercase tracking-wider">Simulated Date & Time</span>
+                    <button onclick="resetSimulation()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded text-[9px] font-bold transition">RESET</button>
+                </div>
+                <div class="flex gap-2">
+                    <input type="date" id="currentDateInput" min="2020-01-01" max="2035-12-31" class="bg-transparent text-gray-900 font-bold focus:outline-none cursor-pointer text-sm leading-none w-[110px]" oninput="if(this.value && this.value.split('-')[0].length > 4) { this.value = '2035' + this.value.substring(this.value.indexOf('-')); } updateSystemDateTime();" onblur="if(!this.validity.valid || !this.value){ this.value='2026-04-06'; updateSystemDateTime(); }" title="Override date">
+                    <input type="time" id="currentTimeInput" class="bg-transparent text-gray-900 font-bold focus:outline-none focus:text-orange-600 cursor-pointer text-sm leading-none" oninput="if(this.value) updateSystemDateTime();" onblur="if(!this.validity.valid || !this.value){ this.value='11:30'; updateSystemDateTime(); }" title="Override time">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-6xl mx-auto pb-10 mt-10">
+
+        <!-- ================= VIEW: TABLE BOOKING ================= -->
+        <div id="view-table-booking" class="view-panel space-y-8">
+            <!-- Header -->
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-4xl font-bold text-gray-900 mb-2">Table Reservations</h1>
+                    <p class="text-gray-600">Select a table and make your reservation</p>
+                </div>
+            </div>
+
+            <!-- Filter Card -->
+            <div class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl shadow-sm bg-card text-card-foreground">
+                <div class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="mb-2 block text-sm font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Select Date</label>
+                            <input type="date" id="bookDate" class="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500 disabled:cursor-not-allowed disabled:opacity-50" onchange="checkFilters()">
+                        </div>
+                        <div>
+                            <label class="mb-2 block text-sm font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Guest Count</label>
+                            <input type="number" id="bookParty" min="1" max="50" value="2" class="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500 disabled:cursor-not-allowed disabled:opacity-50" oninput="checkFilters(); renderTables();">
+                        </div>
+                    </div>
+
+                    <div class="mt-5 pt-5 border-t border-amber-200/50">
+                        <label class="mb-2 block text-sm font-semibold">Filter by Area</label>
+                        <div class="flex flex-wrap gap-2" id="areaFilterContainer">
+                            <!-- Rendered by JS -->
+                        </div>
+                    </div>
+
+                    <p id="filterNotice" class="text-sm text-amber-700 mt-3 flex items-center gap-2 hidden">
+                        <i data-lucide="calendar" class="w-4 h-4"></i>
+                        <span id="filterNoticeText"></span>
+                    </p>
+                </div>
+            </div>
+
+
+            <!-- Policy Notice -->
+            <!--                <div class="rounded-xl border bg-blue-50 text-card-foreground shadow-sm border-blue-200 mt-8">-->
+            <!--                    <div class="p-4">-->
+            <!--                        <div class="flex items-start gap-3">-->
+            <!--                            <i data-lucide="alert-circle" class="w-5 h-5 text-blue-600 mt-0.5"></i>-->
+            <!--                            <div>-->
+            <!--                            <h4 class="font-semibold text-blue-900 mb-2">Table Reservation Policy</h4>-->
+            <!--                            <ul class="text-sm text-blue-800 space-y-1">-->
+            <!--                                <li>• You can book up to 7 days ahead of today</li>-->
+            <!--                                <li>• Cancellations must be made 24 hours (1 day) before the event</li>-->
+            <!--                            </ul>-->
+            <!--                            </div>-->
+            <!--                        </div>-->
+            <!--                    </div>-->
+            <!--                </div>-->
+
+            <!-- Table Grids Container -->
+            <div id="areasContainer" class="space-y-6">
+                <!-- Rendered by JS -->
+            </div>
+
+
+        </div>
+
+        <!-- ================= VIEW: AREA BOOKING ================= -->
+        <div id="view-area-booking" class="view-panel space-y-8 hidden">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-4xl font-bold text-gray-900 mb-2">Area Reservations</h1>
+                    <p class="text-gray-600">Book entire areas for private events</p>
+                </div>
+            </div>
+
+
+
+            <!-- Date Selection -->
+            <div class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl shadow-sm bg-card text-card-foreground">
+                <div class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="mb-2 block text-sm font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Select Date (7 days - 1 month ahead)</label>
+                            <input type="date" id="areaBookDate" class="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50" oninput="renderAreaBookings()">
+                        </div>
+                        <div>
+                            <label class="mb-2 block text-sm font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Number of Guests</label>
+                            <input type="number" id="areaBookParty" min="10" max="50" value="20" class="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50" oninput="renderAreaBookings()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Policy Notice -->
+            <!--                <div class="rounded-xl border bg-blue-50 text-card-foreground shadow-sm border-blue-200 mt-8">-->
+            <!--                    <div class="p-4">-->
+            <!--                        <div class="flex items-start gap-3">-->
+            <!--                            <i data-lucide="alert-circle" class="w-5 h-5 text-blue-600 mt-0.5"></i>-->
+            <!--                            <div>-->
+            <!--                            <h4 class="font-semibold text-blue-900 mb-2">Area Reservation Policy</h4>-->
+            <!--                            <ul class="text-sm text-blue-800 space-y-1">-->
+            <!--                                <li>• Area reservations must be made at least 7 days in advance</li>-->
+            <!--                                <li>• You can book up to 1 month ahead</li>-->
+            <!--                                <li>• Cancellations must be made 72 hours (3 days) before the event</li>-->
+            <!--                                <li>• A deposit may be required for large events</li>-->
+            <!--                            </ul>-->
+            <!--                            </div>-->
+            <!--                        </div>-->
+            <!--                    </div>-->
+            <!--                </div>-->
+
+            <!-- Available Areas -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="areaBookingContainer">
+                <!-- Rendered by JS -->
+            </div>
+
+
+        </div>
+
+
+
+
+        <!-- ================= VIEW: PAST RESERVATIONS ================= -->
+        <div id="view-past-reservations" class="view-panel space-y-8 hidden">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-4xl font-bold text-gray-900 mb-2">Reservation History</h1>
+                    <p class="text-gray-600">View your past reservations</p>
+                </div>
+
+            </div>
+
+            <!-- Cancellation Policy -->
+            <!-- <div class="rounded-xl border bg-blue-50 text-card-foreground shadow-sm border-blue-200 mb-8">
+                <div class="p-5">
+                    <div class="flex items-center gap-2 mb-3 border-b border-amber-600 pb-2">
+                        <i data-lucide="clock" class="w-5 h-5 text-amber-600"></i>
+                        <h5 class="font-bold text-amber-900 text-lg">Reservation Cancellation Policy</h5>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                        <div>
+                            <p class="text-sm text-amber-800">
+                                You may cancel a table reservation up to <strong>24 hours</strong> before the scheduled time.
+                            </p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-amber-800">
+                                Area cancellations must be made at least <strong>72 hours</strong> before the reserve date.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+             -->
+
+            <!-- History Filters -->
+            <div class="flex items-center gap-3 border-b border-gray-200 pb-2">
+                <button id="resFilterAll" onclick="setResFilter('ALL')" class="px-4 py-2 text-sm font-bold border-b-2 transition-colors border-orange-500 text-orange-600">All Reservations</button>
+                <button id="resFilterTable" onclick="setResFilter('TABLE')" class="px-4 py-2 text-sm font-bold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition-colors">Table Bookings</button>
+                <button id="resFilterArea" onclick="setResFilter('AREA')" class="px-4 py-2 text-sm font-bold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition-colors">Area Bookings</button>
+            </div>
+
+            <div id="myResContainer" class="space-y-4">
+                <!-- Javascript will dynamically render cards here -->
+            </div>
+        </div>
+
+        <!-- ================= VIEW: REVIEWS ================= -->
+        <div id="view-reviews" class="view-panel space-y-8 hidden">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-4xl font-bold text-gray-900 mb-2">Reviews & Feedback</h1>
+                    <p class="text-gray-600">Share your dining experience</p>
+                </div>
+            </div>
+
+            <!-- Review Policy -->
+            <!--                <div class="rounded-xl border bg-blue-50 text-card-foreground shadow-sm border-blue-200 mt-8">-->
+            <!--                    <div class="p-4">-->
+            <!--                        <div class="flex items-start gap-3">-->
+            <!--                            <i data-lucide="alert-circle" class="w-5 h-5 text-blue-600 mt-0.5"></i>-->
+            <!--                            <div>-->
+            <!--                                <h4 class="font-semibold text-blue-900 mb-2">Review Policy</h4>-->
+            <!--                                <ul class="text-sm text-blue-800 space-y-1">-->
+            <!--                                    <li>• Reviews can only be submitted for completed reservations</li>-->
+            <!--                                    <li>• You can edit or delete your review within 24 hours of posting</li>-->
+            <!--                                    <li>• After 24 hours, reviews become permanent and cannot be modified</li>-->
+            <!--                                    <li>• Please be honest and constructive in your feedback</li>-->
+            <!--                                </ul>-->
+            <!--                            </div>-->
+            <!--                        </div>-->
+            <!--                    </div>-->
+            <!--                </div>-->
+
+            <!-- Your Reviews -->
+            <div class="rounded-xl border bg-white text-card-foreground shadow-sm">
+                <div class="flex flex-col space-y-1.5 p-6">
+                    <h3 class="font-semibold leading-none tracking-tight text-xl">Your Reviews</h3>
+                </div>
+                <div class="p-6 pt-0">
+                    <div class="space-y-4">
+                        <div class="p-6 bg-gray-50 rounded-lg border border-gray-200 space-y-4">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="mb-3">
+                                        <p class="font-semibold text-gray-900">Table 42 - Garden Area</p>
+                                        <p class="text-sm text-gray-600">3/1/2026 at 20:00</p>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-4 mb-4">
+                                        <div>
+                                            <p class="text-sm text-gray-600 mb-1">Restaurant Rating</p>
+                                            <div class="flex gap-1 text-amber-400"><i data-lucide="star" class="w-4 h-4 fill-amber-400"></i><i data-lucide="star" class="w-4 h-4 fill-amber-400"></i><i data-lucide="star" class="w-4 h-4 fill-amber-400"></i><i data-lucide="star" class="w-4 h-4 fill-amber-400"></i><i data-lucide="star" class="w-4 h-4 fill-amber-400"></i></div>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm text-gray-600 mb-1">Service Rating</p>
+                                            <div class="flex gap-1 text-amber-400"><i data-lucide="star" class="w-4 h-4 fill-amber-400"></i><i data-lucide="star" class="w-4 h-4 fill-amber-400"></i><i data-lucide="star" class="w-4 h-4 fill-amber-400"></i><i data-lucide="star" class="w-4 h-4 fill-amber-400"></i><i data-lucide="star" class="w-4 h-4 text-gray-300"></i></div>
+                                        </div>
+                                    </div>
+                                    <p class="text-gray-700 leading-relaxed">Food was amazing, atmosphere was perfect for our anniversary. Waiter was a bit slow to take drinks but otherwise exceptional service!</p>
+                                    <div class="flex items-center gap-2 mt-3">
+                                        <p class="text-xs text-gray-500">Posted 3/2/2026</p>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2 ml-4">
+                                    <button class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-red-50 hover:text-red-700 h-9 px-3" onclick="alert('Reviews older than 24 hours cannot be deleted.')"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+
+        </div>
+
+        <!-- ================= VIEW: PROFILE SETTINGS ================= -->
+        <div id="view-profile-settings" class="view-panel space-y-8 hidden">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-4xl font-bold text-gray-900 mb-2">Profile Settings</h1>
+                    <p class="text-gray-600">Update your account information or permanently delete your account</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Update Info Card -->
+                <div class="rounded-xl border bg-white p-6 shadow-sm">
+                    <div class="flex items-center gap-3 mb-6">
+                        <i data-lucide="user" class="w-6 h-6 text-indigo-600"></i>
+                        <h2 class="text-2xl font-bold">Personal Info</h2>
+                    </div>
+
+                    <form id="profileUpdateForm" class="space-y-4" onsubmit="updateProfile(event)">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                            <input type="text" id="profName" required class="w-full h-11 px-3 py-2 border border-input rounded-md text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                            <input type="email" id="profEmail" required class="w-full h-11 px-3 py-2 border border-input rounded-md text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                            <input type="tel" id="profPhone" required class="w-full h-11 px-3 py-2 border border-input rounded-md text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">New Password (leave blank to keep current)</label>
+                            <input type="password" id="profPassword" class="w-full h-11 px-3 py-2 border border-input rounded-md text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                        </div>
+
+                        <button type="submit" class="w-full h-11 mt-4 inline-flex items-center justify-center rounded-md bg-gray-900 text-white font-medium hover:bg-gray-800 transition-colors">
+                            Save Changes
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+
+            <!-- Danger Zone Card -->
+            <div class="rounded-xl border border-red-200 bg-red-50 p-6 shadow-sm self-start">
+                <div class="flex items-center gap-3 mb-4">
+                    <i data-lucide="triangle-alert" class="w-6 h-6 text-red-600"></i>
+                    <h2 class="text-xl font-bold text-red-900">Danger Zone</h2>
+                </div>
+                <p class="text-sm text-red-800 mb-6">
+                    Once you delete your account, there is no going back. Please be certain. All your current and past reservations will be permanently destroyed.
+                </p>
+
+                <button onclick="deleteAccount()" class="w-full h-11 inline-flex items-center justify-center rounded-md border border-red-300 bg-white text-red-700 font-bold hover:bg-red-100 transition-colors shadow-sm">
+                    Permanently Delete Account
+                </button>
+            </div>
+
+
+
+        </div>
+
+    </div>
+</main>
+
+<!-- Modal Layout -->
+<div id="bookingModal" class="fixed inset-0 bg-black/80 hidden z-[60] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+    <div class="bg-white rounded-lg shadow-lg w-full max-w-md overflow-hidden border">
+        <div class="flex flex-col space-y-1.5 text-center sm:text-left p-6">
+            <h2 class="text-lg font-semibold leading-none tracking-tight">Confirm Reservation</h2>
+        </div>
+        <div class="p-6 pt-0 space-y-4">
+            <div class="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                <h3 class="font-semibold text-lg mb-3">Reservation Details</h3>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between"><span class="text-gray-600">Date:</span><span id="mDate" class="font-medium"></span></div>
+
+                    <!-- Table Time Display -->
+                    <div id="mTableTimeContainer" class="flex justify-between"><span class="text-gray-600">Time:</span><span id="mTime" class="font-medium"></span></div>
+
+                    <!-- Area Time Inputs -->
+                    <div id="mAreaTimeContainer" class="hidden space-y-2">
+                        <div class="flex justify-between items-center"><span class="text-gray-600">Start Time:</span><input type="time" id="mStartTimeInput" step="3600" class="flex h-8 w-28 rounded-md border border-amber-300 bg-white px-2 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-amber-500 font-semibold text-amber-900"/></div>
+                        <div class="flex justify-between items-center"><span class="text-gray-600">End Time:</span><input type="time" id="mEndTimeInput" step="3600" class="flex h-8 w-28 rounded-md border border-amber-300 bg-white px-2 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-amber-500 font-semibold text-amber-900"/></div>
+                    </div>
+
+                    <div id="mTableContainer" class="flex justify-between"><span class="text-gray-600">Table:</span><span id="mTable" class="font-medium"></span></div>
+                    <div class="flex justify-between"><span class="text-gray-600">Area:</span><span id="mArea" class="font-medium"></span></div>
+                    <div class="flex justify-between"><span class="text-gray-600">Chair Count:</span><span id="mCap" class="font-medium"></span></div>
+                    <div class="flex justify-between items-center"><span class="text-gray-600">Guest Count:</span><input type="number" id="mPartyInput" min="1" onchange="this.value = Math.max(1, Math.min(parseInt(this.max) || 100, parseInt(this.value) || 1));" oninput="if(parseInt(this.value) > parseInt(this.max)) this.value = this.max;" class="flex h-8 w-20 rounded-md border border-amber-300 bg-white px-2 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-amber-500 font-semibold text-amber-900 text-right"/></div>
+
+                    <div class="mt-4 pt-4 border-t border-amber-200">
+                        <span id="mFeaturesLabel" class="text-gray-600 font-medium block mb-2">Features:</span>
+                        <div id="mFeatures" class="flex flex-wrap gap-2">
+                            <!-- Feature chips will be injected here -->
+                        </div>
+                    </div>
+
+                    <div id="mDurationContainer" class="flex justify-between items-center mt-3 pt-2 border-t border-amber-200">
+                        <span class="text-gray-600 font-medium">Duration:</span>
+                        <span id="mDurationText" class="font-bold text-amber-900"></span>
+                        <input type="hidden" id="bookDuration" value="1">
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="closeModal()" class="flex-1 inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2 hover:bg-gray-100">Cancel</button>
+                <button onclick="confirmBooking()" class="flex-1 inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring border border-transparent bg-amber-600 text-white shadow hover:bg-amber-700 h-9 px-4 py-2">Confirm Booking</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    // ==========================================
+    // 🔒 AUTH GUARD & USER DATA
+    // ==========================================
+    function enforceAuth() {
+        const sessionId = localStorage.getItem('restaurantSessionUserId');
+        const sessionRole = localStorage.getItem('restaurantSessionRole');
+
+        if (!sessionId || sessionRole !== 'CUSTOMER') {
+            window.location.replace('/login');
+            return false;
+        }
+        return true;
+    }
+
+    // Run perfectly on direct load and Bfcache (browser back button) load
+    enforceAuth();
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted) enforceAuth();
+    });
+
+    const sessionId = localStorage.getItem('restaurantSessionUserId');
+    const sessionUserName = localStorage.getItem('restaurantSessionUserName') || 'Valued Guest';
+
+    if (sessionId) {
+        // Update UI Sidebar
+        document.getElementById('sidebarFullName').innerText = sessionUserName;
+
+        // Extract Initials (e.g. Uwan Isurujith -> UI)
+        const parts = sessionUserName.split(' ').filter(p => p.trim() !== '');
+        let initials = parts.length > 1
+            ? parts[0].charAt(0) + parts[parts.length - 1].charAt(0)
+            : sessionUserName.charAt(0);
+        document.getElementById('sidebarInitials').innerText = initials.toUpperCase();
+    }
+
+    // SPA View Switching Logic
+    const navViews = ['table-booking', 'area-booking', 'past-reservations', 'reviews', 'profile-settings'];
+    function switchView(targetId, updateUrl = true) {
+        if (typeof clearSelection === 'function' && targetId !== 'table-booking') clearSelection();
+        navViews.forEach(v => {
+            // Hide panel
+            document.getElementById('view-' + v).classList.add('hidden');
+            // Deactivate nav button
+            const btn = document.getElementById('nav-' + v);
+            if (btn) {
+                btn.classList.add('hover:bg-gray-100', 'text-gray-700');
+                btn.classList.remove('bg-gray-900', 'text-white', 'shadow-md');
+                // Deactivate icon
+                const icon = btn.querySelector('svg');
+                if (icon) {
+                    icon.classList.add('text-gray-500');
+                    icon.classList.remove('opacity-90');
+                }
+            }
+
+            if(v === targetId) {
+                // Show panel
+                document.getElementById('view-' + v).classList.remove('hidden');
+                // Activate nav button
+                if (btn) {
+                    btn.classList.remove('hover:bg-gray-100', 'text-gray-700');
+                    btn.classList.add('bg-gray-900', 'text-white', 'shadow-md');
+                    // Activate icon
+                    const icon = btn.querySelector('svg');
+                    if (icon) {
+                        icon.classList.remove('text-gray-500');
+                        icon.classList.add('opacity-90');
+                    }
+                }
+            }
+        });
+
+        // Advance URL History
+        if (updateUrl) {
+            window.history.pushState({ tab: targetId }, '', `/customer/${targetId}`);
+        }
+    }
+
+    // Handle Back/Forward Browser buttons
+    window.addEventListener('popstate', (e) => {
+        if (e.state && e.state.tab) {
+            switchView(e.state.tab, false);
+        } else {
+            // Fallback to URL parsing or default
+            parseUrlToView();
+        }
+    });
+
+    // Route from initial URL
+    function parseUrlToView() {
+        const pathParts = window.location.pathname.split('/');
+        const potentialTab = pathParts[pathParts.length - 1]; // e.g., 'table-booking'
+        if (navViews.includes(potentialTab)) {
+            switchView(potentialTab, false);
+        } else {
+            // Default view
+            switchView('table-booking', false);
+        }
+    }
+
+    // Init Icons
+    lucide.createIcons();
+
+    // System Time Logic
+    let CURRENT_TIME = new Date('2026-04-06T11:30:00');
+    const savedTime = sessionStorage.getItem('simTime_customer');
+    if(savedTime) CURRENT_TIME = new Date(parseInt(savedTime));
+
+    // Apply Temporal constraints on dates using Simulated Time
+    function initializeDateConstraints() {
+        const today = new Date(CURRENT_TIME);
+
+        // Format to YYYY-MM-DD
+        const fmt = (d) => {
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+
+        const dateBook = document.getElementById('bookDate');
+        if (dateBook) {
+            dateBook.min = fmt(today);
+            const tableMax = new Date(today);
+            tableMax.setDate(today.getDate() + 6);
+            dateBook.max = fmt(tableMax);
+        }
+
+        const areaDate = document.getElementById('areaBookDate');
+        if (areaDate) {
+            const areaMin = new Date(today);
+            areaMin.setDate(today.getDate() + 7);
+            areaDate.min = fmt(areaMin);
+
+            const areaMax = new Date(today);
+            areaMax.setDate(today.getDate() + 37);
+            areaDate.max = fmt(areaMax);
+        }
+    }
+    initializeDateConstraints();
+
+    function formatTimeForInput(date) {
+        return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+    }
+    function formatDateForInput(date) {
+        return `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+    }
+
+    window.updateSystemDateTime = () => {
+        const dateStr = document.getElementById('currentDateInput').value || formatDateForInput(new Date('2026-04-06'));
+        const timeStr = document.getElementById('currentTimeInput').value || '11:30';
+
+        const [year, month, day] = dateStr.split('-');
+        const [hours, mins] = timeStr.split(':');
+
+        let y = parseInt(year);
+        if(y > 2035) y = 2035;
+        if(y < 2020) y = 2020;
+
+        const newDate = new Date(y, parseInt(month)-1, parseInt(day), parseInt(hours), parseInt(mins), 0, 0);
+        CURRENT_TIME = newDate;
+        document.getElementById('currentDateInput').value = formatDateForInput(newDate);
+        sessionStorage.setItem('simTime_customer', CURRENT_TIME.getTime());
+
+        const nextHourDate = new Date(CURRENT_TIME);
+        nextHourDate.setHours(nextHourDate.getHours() + 1);
+        nextHourDate.setMinutes(0);
+
+        // Re-run mathematical Temporal Bounds constraint
+        initializeDateConstraints();
+
+        document.getElementById('bookDate').value = dateStr;
+        document.getElementById('areaBookDate').value = dateStr;
+
+
+        if(typeof checkFilters === 'function') checkFilters();
+        if(typeof renderTables === 'function') renderTables();
+        if(typeof renderAreaBookings === 'function') renderAreaBookings();
+    };
+
+    window.resetSimulation = () => {
+        sessionStorage.removeItem('simTime_customer');
+        CURRENT_TIME = new Date('2026-04-06T11:30:00');
+        const defaultDateStr = formatDateForInput(CURRENT_TIME);
+
+        document.getElementById('currentDateInput').value = defaultDateStr;
+        document.getElementById('currentTimeInput').value = formatTimeForInput(CURRENT_TIME);
+
+        const nextHourDate = new Date(CURRENT_TIME);
+        nextHourDate.setHours(nextHourDate.getHours() + 1);
+        nextHourDate.setMinutes(0);
+
+        // Re-run mathematical Temporal Bounds constraint
+        initializeDateConstraints();
+
+        document.getElementById('bookDate').value = defaultDateStr;
+        document.getElementById('areaBookDate').value = defaultDateStr;
+
+
+        if(typeof checkFilters === 'function') checkFilters();
+        if(typeof renderTables === 'function') renderTables();
+        if(typeof renderAreaBookings === 'function') renderAreaBookings();
+    };
+
+    // State Engine
+    let customerReservations = [];
+    let selectedTableId = null;
+
+    // 50 Tables Data Array
+    let AREAS = ['Regular Area', 'Balcony Area', 'BBQ Area', 'Garden Area'];
+
+    let tables = [];
+    let dbAreas = [];
+    let allReservations = [];
+
+    // Fetch tables, areas, and reservations from live backend
+    async function loadTablesFromBackend() {
+        try {
+            const response = await fetch('http://localhost:8080/api/tables');
+            const data = await response.json();
+
+            const areaResponse = await fetch('http://localhost:8080/api/areas');
+            dbAreas = await areaResponse.json();
+
+            const resResponse = await fetch('http://localhost:8080/api/reservations');
+            allReservations = await resResponse.json();
+
+            // Dynamically update the AREAS array
+            AREAS = dbAreas.map(a => a.name);
+
+            // Map the backend fields to match our frontend UI keys
+            tables = data.map(t => ({
+                id: t.id,
+                number: t.tableNumber,
+                area: t.area ? t.area.name : "Unknown",
+                capacity: t.seatingCapacity,
+                features: t.features || []
+            }));
+
+            // Calculate alive reservation history mapping
+            customerReservations = allReservations
+                .filter(r => r.customer && r.customer.id == sessionId)
+                .map(r => {
+                    const timeStr = r.reservationTime.substring(0, 5);
+                    const [h, m] = timeStr.split(':');
+                    const dur = r.duration || 1;
+                    const endH = (parseInt(h) + dur).toString().padStart(2, '0');
+                    const endTimeStr = `${endH}:${m}`;
+
+                    return {
+                        id: r.id,
+                        date: r.reservationDate,
+                        time: timeStr,
+                        endTime: endTimeStr,
+                        tableNumber: r.type === "AREA" ? "Entire Area" : (r.table ? r.table.tableNumber : "N/A"),
+                        area: r.type === "AREA" && r.targetArea ? r.targetArea.name : (r.table && r.table.area ? r.table.area.name : "Unknown"),
+                        partySize: r.partySize,
+                        status: r.status,
+                        type: r.type,
+                        features: r.type === 'AREA' && r.targetArea ? (r.targetArea.features || []) : (r.table ? (r.table.features || []) : []),
+                        capacity: r.type === 'AREA' && r.targetArea ? r.targetArea.capacity : (r.table ? r.table.seatingCapacity : "Unknown")
+                    };
+                })
+                .sort((a,b) => new Date(b.date + 'T' + b.time) - new Date(a.date + 'T' + a.time));
+
+            checkFilters();
+            renderTables();
+            renderAreaBookings();
+            renderMyReservations();
+        } catch (err) {
+            console.error("Failed to load tables, backend is likely offline.", err);
+        }
+    }
+
+    // Render Area Bookings
+    function renderAreaBookings() {
+        const container = document.getElementById('areaBookingContainer');
+        const date = document.getElementById('areaBookDate').value;
+
+        function getAreaImage(area) {
+            if (area.includes("BBQ")) return "/images/areas/bbq.png";
+            if (area.includes("Balcony")) return "/images/areas/balcony.png";
+            if (area.includes("Roof")) return "/images/areas/rooftop.png";
+            return "/images/areas/regular.png";
+        }
+
+        let html = '';
+
+        dbAreas.forEach(area => {
+            const isReserved = allReservations.some(r => r.type === "AREA" && r.targetArea && r.targetArea.id === area.id && r.reservationDate === date && r.status !== 'CANCELLED');
+
+            let isBounded = true;
+            if (date) {
+                const todayStart = new Date(CURRENT_TIME);
+                todayStart.setHours(0,0,0,0);
+                const selectedDate = new Date(date);
+                selectedDate.setHours(0,0,0,0);
+                const diffDays = Math.floor((selectedDate - todayStart) / (1000 * 60 * 60 * 24));
+                if (diffDays < 7 || diffDays > 37) isBounded = false;
+            }
+
+            const isAvailable = date && !isReserved && isBounded;
+
+            html += `
+                    <button class="p-4 rounded-xl border-2 transition-all text-left flex flex-col group ${isAvailable ? 'bg-white border-green-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer' : 'bg-gray-50 border-gray-300 opacity-60 cursor-not-allowed'}" ${!isAvailable ? 'disabled' : `onclick="openAreaModal(${area.id})"`}>
+                        <div class="w-full aspect-video rounded-lg overflow-hidden mb-4 shadow-sm relative">
+                            <img src="${getAreaImage(area.name)}" alt="${area.name}" class="w-full h-full object-cover transition-transform duration-500 ease-out ${isAvailable ? 'group-hover:scale-110' : ''}" />
+                            <div class="absolute inset-0 ring-1 ring-inset ring-black/10 rounded-lg pointer-events-none"></div>
+                        </div>
+                        <h3 class="font-bold text-center text-gray-900 mb-3">${area.name}</h3>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between"><span class="text-gray-600">Capacity:</span><span class="font-semibold">up to ${area.totalCapacity}</span></div>
+                            <div class="flex justify-between"><span class="text-gray-600">Min Duration:</span><span class="font-semibold">3 hours</span></div>
+                        </div>
+                        <div class="flex items-center justify-center gap-1 mt-4">
+                            ${!date ? '<i data-lucide="calendar" class="w-4 h-4 text-gray-600"></i><span class="text-xs text-gray-700 font-medium">Select Date</span>' : !isBounded ? '<i data-lucide="alert-circle" class="w-4 h-4 text-gray-500"></i><span class="text-xs text-gray-600 font-medium whitespace-nowrap">7-37 Days Required</span>' : isAvailable ? '<i data-lucide="check-circle-2" class="w-4 h-4 text-green-600"></i><span class="text-xs text-green-700 font-medium">Available</span>' : '<i data-lucide="x-circle" class="w-4 h-4 text-red-600"></i><span class="text-xs text-red-700 font-medium">Reserved</span>'}
+                        </div>
+                    </button>
+                `;
+        });
+        container.innerHTML = html;
+        lucide.createIcons();
+    }
+    document.getElementById('areaBookDate').addEventListener('change', renderAreaBookings);
+
+    let RESTAURANT_OPEN_HOUR = 10;
+    let RESTAURANT_CLOSE_HOUR = 23;
+    let selectedAreaFilter = 'ALL';
+
+    let MIN_BOOKING_HOURS = 1;
+    let MAX_BOOKING_HOURS = 3;
+    let timelineSelection = { tableId: null, startHour: null, endHour: null };
+
+    function setAreaFilter(area) {
+        selectedAreaFilter = area;
+        renderAreaFilters();
+        renderTables();
+    }
+
+    function renderAreaFilters() {
+        const container = document.getElementById('areaFilterContainer');
+        if(!container) return;
+        let html = `<button onclick="setAreaFilter('ALL')" class="px-4 py-1.5 rounded-full text-sm font-bold transition-colors ${selectedAreaFilter === 'ALL' ? 'bg-amber-600 text-white shadow-sm' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'}">All Areas</button>`;
+
+        AREAS.forEach(a => {
+            const isActive = selectedAreaFilter === a;
+            html += `<button onclick="setAreaFilter('${a}')" class="px-4 py-1.5 rounded-full text-sm font-bold transition-colors ${isActive ? 'bg-amber-600 text-white shadow-sm' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'}">${a}</button>`;
+        });
+        container.innerHTML = html;
+    }
+
+    function checkFilters() {
+        const date = document.getElementById('bookDate').value;
+        const notice = document.getElementById('filterNotice');
+        const noticeText = document.getElementById('filterNoticeText');
+
+        if(date) {
+            notice.classList.remove('hidden');
+            noticeText.innerText = `Showing availability for ${date}`;
+        } else {
+            notice.classList.add('hidden');
+        }
+        renderAreaFilters();
+        renderTables();
+    }
+
+    // Render the Timeline View
+    function renderTables() {
+        const container = document.getElementById('areasContainer');
+        const date = document.getElementById('bookDate').value;
+        const partySize = parseInt(document.getElementById('bookParty').value) || 1;
+
+        if (!date) {
+            container.innerHTML = '<div class="p-8 text-center bg-gray-50 text-gray-500 rounded-lg border shadow-sm font-medium">Please select a date to view availability.</div>';
+            return;
+        }
+
+        const numHours = RESTAURANT_CLOSE_HOUR - RESTAURANT_OPEN_HOUR;
+        if (numHours <= 0) return;
+
+        // Generate Header
+        let headerHtml = `<div class="grid sticky top-0 z-30 shadow-sm bg-white" style="grid-template-columns: 120px repeat(${numHours}, 1fr);">
+                                <div class="p-2 font-bold text-gray-700 flex items-center text-[10px] uppercase bg-white border-r border-b border-gray-200">Table</div>`;
+        for(let h = RESTAURANT_OPEN_HOUR; h < RESTAURANT_CLOSE_HOUR; h++) {
+            const hourStr = h > 12 ? `${h-12} PM` : (h===12 ? `12 PM` : `${h} AM`);
+            headerHtml += `<div class="p-1.5 border-r border-b border-gray-200 text-center font-bold text-[10px] text-gray-500 bg-gray-50 flex items-center justify-center">${hourStr}</div>`;
+        }
+        headerHtml += `</div>`;
+
+        let rowsHtml = '';
+        let areasToRender = selectedAreaFilter === 'ALL' ? AREAS : [selectedAreaFilter];
+        let tablesShown = 0;
+
+        areasToRender.forEach(area => {
+            const areaTables = tables.filter(t => t.area === area && t.capacity >= partySize);
+            if(areaTables.length === 0) return;
+
+            tablesShown += areaTables.length;
+            rowsHtml += `<div class="bg-gradient-to-r from-amber-100/50 to-transparent p-1.5 pl-3 font-bold text-amber-900 text-[10px] border-b border-amber-200/50 uppercase tracking-wider flex items-center gap-2">
+                                <i data-lucide="map-pin" class="w-3 h-3"></i> ${area}
+                             </div>`;
+
+            areaTables.forEach(table => {
+                const tableRes = allReservations.filter(r =>
+                    r.reservationDate === date &&
+                    r.table && r.table.id === table.id &&
+                    r.status !== 'CANCELLED'
+                );
+
+                let rowContent = `<div class="grid border-b border-gray-100 relative group min-h-[44px]" style="grid-template-columns: 120px repeat(${numHours}, 1fr);">
+                                        <div class="p-2 pl-3 font-bold text-gray-700 text-sm flex items-center bg-white group-hover:bg-gray-50 border-r border-gray-200 z-20">
+                                            T${table.number} <span class="text-[9px] ml-1 text-gray-400">(${table.capacity})</span>
+                                        </div>`;
+
+                // Render clickable empty slots for each hour
+                const todayStr = `${CURRENT_TIME.getFullYear()}-${(CURRENT_TIME.getMonth()+1).toString().padStart(2, '0')}-${CURRENT_TIME.getDate().toString().padStart(2, '0')}`;
+                const isToday = (date === todayStr);
+                const curHour = CURRENT_TIME.getHours();
+
+                for(let i=0; i<numHours; i++) {
+                    const cellHour = RESTAURANT_OPEN_HOUR + i;
+                    if (isToday && cellHour < curHour) {
+                        rowContent += `<div class="border-r border-gray-100 bg-gray-100 flex items-center justify-center cursor-not-allowed h-full relative overflow-hidden" title="Passed"><div class="absolute inset-0 opacity-10" style="background: repeating-linear-gradient(45deg, transparent, transparent 5px, #000 5px, #000 10px);"></div></div>`;
+                    } else {
+                        rowContent += `<div id="cell-${table.id}-${cellHour}" onclick="handleTimelineClick('${table.id}', ${cellHour})" class="border-r border-gray-100 cursor-pointer hover:bg-amber-50 transition-colors h-full timeline-cell" data-hour="${cellHour}"></div>`;
+                    }
+                }
+
+                // Overlay Reservations
+                tableRes.forEach(r => {
+                    const [hours, mins] = r.reservationTime.substring(0,5).split(':').map(Number);
+                    let offsetHours = hours - RESTAURANT_OPEN_HOUR;
+                    let offsetMins = mins / 60;
+                    let startCol = offsetHours + offsetMins;
+
+                    const duration = r.duration || 2;
+                    const spanCols = duration;
+
+                    if(startCol + spanCols <= 0 || startCol >= numHours) return;
+
+                    let renderStartCol = startCol;
+                    let renderSpan = spanCols;
+
+                    if(renderStartCol < 0) {
+                        renderSpan += renderStartCol;
+                        renderStartCol = 0;
+                    }
+                    if(renderStartCol + renderSpan > numHours) {
+                        renderSpan = numHours - renderStartCol;
+                    }
+
+                    rowContent += `<div class="absolute inset-y-1 rounded border p-1 overflow-hidden shadow-sm flex items-center justify-center bg-red-50 border-red-200 text-red-800 z-10 cursor-not-allowed reserved-block" data-table="${table.id}" data-starthour="${renderStartCol + RESTAURANT_OPEN_HOUR}" data-endhour="${renderStartCol + renderSpan + RESTAURANT_OPEN_HOUR}"
+                                            style="left: calc(120px + ((100% - 120px) * ${renderStartCol/numHours})); width: calc(((100% - 120px) * ${renderSpan/numHours}) - 4px);"
+                                            title="Reserved">
+                                            <div class="text-[10px] font-bold leading-tight flex items-center gap-1"><i data-lucide="lock" class="w-3 h-3"></i> Reserved</div>
+                                       </div>`;
+                });
+
+                // Add current time indicator if showing today
+                if (date === todayStr) {
+                    const curOffsetHours = CURRENT_TIME.getHours() - RESTAURANT_OPEN_HOUR;
+                    const curOffsetMins = CURRENT_TIME.getMinutes() / 60;
+                    const curCol = curOffsetHours + curOffsetMins;
+                    if(curCol >= 0 && curCol <= numHours) {
+                        rowContent += `<div class="absolute inset-y-0 w-0.5 bg-orange-500 z-15" style="left: calc(120px + ((100% - 120px) * ${curCol/numHours})); box-shadow: 0 0 4px rgba(249,115,22,0.5);"></div>`;
+                    }
+                }
+
+                rowContent += `</div>`;
+                rowsHtml += rowContent;
+            });
+        });
+
+        if (tablesShown === 0) {
+            container.innerHTML = `<div class="p-8 text-center bg-gray-50 text-gray-500 rounded-lg border shadow-sm font-medium">No tables match your Guest Count (${partySize}) and Area filter.</div>`;
+            return;
+        }
+
+        container.innerHTML = `
+                <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm relative">
+                    <div class="overflow-x-auto min-w-[800px]">
+                        ${headerHtml}
+                        ${rowsHtml}
+                    </div>
+                </div>
+                <div class="flex items-center justify-end gap-4 text-xs font-bold text-gray-500 mt-2 px-2">
+                    <div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded bg-white border border-gray-200"></div> Available (Click to book)</div>
+                    <div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded bg-red-50 border border-red-200 text-red-500 flex items-center justify-center"><i data-lucide="lock" class="w-2 h-2"></i></div> Reserved</div>
+                </div>
+            `;
+        lucide.createIcons();
+    }
+
+    // Timeline Selection Logic
+    function clearSelection() {
+        timelineSelection = { tableId: null, startHour: null, endHour: null };
+        document.querySelectorAll('.timeline-cell').forEach(cell => {
+            cell.classList.remove('bg-amber-200', 'border-amber-400');
+        });
+        const fab = document.getElementById('bookingFab');
+        if(fab) fab.classList.add('translate-y-full', 'opacity-0');
+    }
+
+    function handleTimelineClick(tableId, hour) {
+        // If they clicked a different table, reset
+        if (timelineSelection.tableId !== null && timelineSelection.tableId !== tableId) {
+            clearSelection();
+        }
+
+        const selectedDate = document.getElementById('bookDate').value;
+        const todayStr = `${CURRENT_TIME.getFullYear()}-${(CURRENT_TIME.getMonth()+1).toString().padStart(2, '0')}-${CURRENT_TIME.getDate().toString().padStart(2, '0')}`;
+        if (selectedDate === todayStr && hour < CURRENT_TIME.getHours()) {
+            alert("You cannot book a time slot in the past.");
+            clearSelection();
+            return;
+        }
+
+        if (timelineSelection.startHour === null) {
+            // First click
+            timelineSelection.tableId = tableId;
+            timelineSelection.startHour = hour;
+            renderSelectionHighlight();
+            return;
+        }
+
+        if (timelineSelection.startHour !== null && timelineSelection.endHour === null) {
+            // Second click
+            if (hour <= timelineSelection.startHour) {
+                // Clicked backwards or same cell, reset start to this cell
+                clearSelection();
+                timelineSelection.tableId = tableId;
+                timelineSelection.startHour = hour;
+                renderSelectionHighlight();
+                return;
+            }
+
+            // Check Max Hours
+            const duration = hour - timelineSelection.startHour;
+            if (duration > MAX_BOOKING_HOURS) {
+                alert(`Maximum booking duration is ${MAX_BOOKING_HOURS} hours.`);
+                return;
+            }
+
+            if (duration < MIN_BOOKING_HOURS) {
+                alert(`Minimum booking duration is ${MIN_BOOKING_HOURS} hours.`);
+                return;
+            }
+
+            // Check for overlapping reserved blocks
+            const tableBlocks = document.querySelectorAll(`.reserved-block[data-table="${tableId}"]`);
+            for(let block of tableBlocks) {
+                const blockStart = parseInt(block.dataset.starthour);
+                // If the reserved block starts within our selected range
+                if (blockStart >= timelineSelection.startHour && blockStart < hour) {
+                    alert("You cannot select a range that overlaps an existing reservation.");
+                    return;
+                }
+            }
+
+            timelineSelection.endHour = hour;
+            renderSelectionHighlight();
+            showBookingFab();
+        } else if (timelineSelection.startHour !== null && timelineSelection.endHour !== null) {
+            // Third click resets
+            clearSelection();
+            timelineSelection.tableId = tableId;
+            timelineSelection.startHour = hour;
+            renderSelectionHighlight();
+        }
+    }
+
+    function renderSelectionHighlight() {
+        // Clear existing highlights
+        document.querySelectorAll('.timeline-cell').forEach(cell => {
+            cell.classList.remove('bg-amber-200', 'border-amber-400');
+        });
+
+        if(timelineSelection.tableId === null) return;
+
+        const tId = timelineSelection.tableId;
+        const start = timelineSelection.startHour;
+        const end = timelineSelection.endHour !== null ? timelineSelection.endHour : start + 1; // highlight at least 1 block
+
+        for(let h = start; h < end; h++) {
+            const cell = document.getElementById(`cell-${tId}-${h}`);
+            if (cell) {
+                cell.classList.add('bg-amber-200', 'border-amber-400');
+            }
+        }
+    }
+
+    function showBookingFab() {
+        let fab = document.getElementById('bookingFab');
+        if(!fab) {
+            fab = document.createElement('div');
+            fab.id = 'bookingFab';
+            fab.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-6 z-50 transition-all duration-300 translate-y-full opacity-0';
+            fab.innerHTML = `
+                    <div class="flex flex-col">
+                        <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Selected Time</span>
+                        <span id="fabTimeRange" class="font-bold">--:-- to --:--</span>
+                    </div>
+                    <button onclick="triggerTimelineBooking()" class="bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold px-5 py-2 rounded-full shadow-sm transition-colors flex items-center gap-2">
+                        Book Selection <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="clearSelection()" class="text-gray-400 hover:text-white p-1 rounded-full"><i data-lucide="x" class="w-5 h-5"></i></button>
+                `;
+            document.body.appendChild(fab);
+            lucide.createIcons();
+        }
+
+        const startStr = `${timelineSelection.startHour.toString().padStart(2, '0')}:00`;
+        const endStr = `${timelineSelection.endHour.toString().padStart(2, '0')}:00`;
+        document.getElementById('fabTimeRange').innerText = `${startStr} to ${endStr}`;
+
+        fab.classList.remove('translate-y-full', 'opacity-0');
+    }
+
+    function triggerTimelineBooking() {
+        if(!timelineSelection.tableId || !timelineSelection.startHour || !timelineSelection.endHour) return;
+        openModal(timelineSelection.tableId, timelineSelection.startHour, timelineSelection.endHour);
+        const fab = document.getElementById('bookingFab');
+        if(fab) fab.classList.add('translate-y-full', 'opacity-0');
+    }
+
+    // Modal Logic
+    let isAreaBooking = false;
+    let selectedAreaId = null;
+
+    function openAreaModal(aId) {
+        const date = document.getElementById('areaBookDate').value;
+        const partySize = document.getElementById('areaBookParty').value;
+
+        if(!date) {
+            alert("Please select a date first!");
+            return;
+        }
+
+        const area = dbAreas.find(a => a.id === aId);
+        isAreaBooking = true;
+        selectedAreaId = area.id;
+        selectedTableId = null;
+
+        document.getElementById('mDate').innerText = date;
+        document.getElementById('mArea').innerText = area.name;
+        document.getElementById('mCap').innerText = `Max ${area.totalCapacity} guests`;
+
+        // Toggle Visibility
+        document.getElementById('mTableTimeContainer').classList.add('hidden');
+        document.getElementById('mDurationContainer').classList.add('hidden');
+        document.getElementById('mTableContainer').classList.add('hidden');
+        document.getElementById('mAreaTimeContainer').classList.remove('hidden');
+
+        document.getElementById('mStartTimeInput').value = "17:00";
+        document.getElementById('mEndTimeInput').value = "21:00";
+
+        const partyInput = document.getElementById('mPartyInput');
+        partyInput.value = partySize;
+        partyInput.max = area.totalCapacity;
+
+        const mFeatures = document.getElementById('mFeatures');
+        let featureHtml = `<span class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-blue-100 text-blue-800 border-blue-200">Private VIP Event</span>`;
+        if (area.features && area.features.length > 0) {
+            featureHtml += area.features.map(f =>
+                `<span class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-indigo-100 text-indigo-800 border-indigo-200">${f}</span>`
+            ).join('');
+        }
+        mFeatures.innerHTML = featureHtml;
+        document.getElementById('mFeaturesLabel').innerText = "Area Features:";
+
+        document.getElementById('bookingModal').classList.remove('hidden');
+    }
+
+    function openModal(tId, startHour, endHour) {
+        const date = document.getElementById('bookDate').value;
+        const time = startHour ? `${startHour.toString().padStart(2, '0')}:00` : "12:00";
+        const partySize = document.getElementById('bookParty').value; // Guest Count
+
+        if(!date || !time) {
+            alert("Please select date and time first!");
+            return;
+        }
+
+        // Backend ID is an integer, ensure type matching
+        const parsedId = parseInt(tId);
+        const table = tables.find(t => t.id === parsedId || t.id == tId);
+        selectedTableId = table.id;
+        isAreaBooking = false;
+        selectedAreaId = null;
+
+        document.getElementById('mDate').innerText = date;
+        document.getElementById('mTime').innerText = time;
+        document.getElementById('bookingModal').dataset.selectedTime = time;
+        document.getElementById('mTable').innerText = table.number;
+        document.getElementById('mArea').innerText = table.area;
+        document.getElementById('mCap').innerText = `${table.capacity} seats`;
+
+        // Toggle Visibility for Tables
+        document.getElementById('mTableContainer').classList.remove('hidden');
+        document.getElementById('mTableTimeContainer').classList.remove('hidden');
+        document.getElementById('mDurationContainer').classList.remove('hidden');
+        document.getElementById('mAreaTimeContainer').classList.add('hidden');
+
+        const calcDur = endHour - startHour;
+        document.getElementById('bookDuration').value = calcDur;
+        document.getElementById('mDurationText').innerText = `${calcDur} Hour${calcDur > 1 ? 's' : ''}`;
+        document.getElementById('mTime').innerText = `${time} to ${endHour.toString().padStart(2, '0')}:00`;
+
+
+        const partyInput = document.getElementById('mPartyInput');
+        partyInput.value = partySize;
+        partyInput.max = table.capacity;
+
+        document.getElementById('mFeaturesLabel').innerText = "Table Features:";
+        const mFeatures = document.getElementById('mFeatures');
+        if (table.features && table.features.length > 0) {
+            mFeatures.innerHTML = table.features.map(f =>
+                `<span class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-amber-100 text-amber-800 border-amber-200">
+                        ${f}
+                    </span>`
+            ).join('');
+        } else {
+            mFeatures.innerHTML = `<span class="text-xs text-gray-400 italic">No special features listed</span>`;
+        }
+
+        document.getElementById('bookingModal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+        document.getElementById('bookingModal').classList.add('hidden');
+        selectedTableId = null;
+    }
+
+    async function confirmBooking() {
+        const mPartyInput = document.getElementById('mPartyInput');
+        // Auto clamp right before submission just in case
+        mPartyInput.value = Math.max(1, Math.min(parseInt(mPartyInput.max) || 100, parseInt(mPartyInput.value) || 1));
+        const partySizeValue = parseInt(mPartyInput.value);
+
+        let payload = {
+            customerId: parseInt(sessionId)
+        };
+
+        if (isAreaBooking) {
+            const startTimeStr = document.getElementById('mStartTimeInput').value;
+            const endTimeStr = document.getElementById('mEndTimeInput').value;
+
+            if (!startTimeStr || !endTimeStr) {
+                alert("Please select both start and end times for the event.");
+                return;
+            }
+
+            // Calculate duration in hours
+            const sH = parseInt(startTimeStr.split(":")[0]);
+            const eH = parseInt(endTimeStr.split(":")[0]);
+            let calcDuration = eH - sH;
+            if (calcDuration < 1) {
+                alert("End time must be after start time!");
+                return;
+            }
+            if (calcDuration < MIN_BOOKING_HOURS) {
+                alert(`Area bookings must be at least ${MIN_BOOKING_HOURS} hours long.`);
+                return;
+            }
+            if (calcDuration > MAX_BOOKING_HOURS) {
+                alert(`Area bookings cannot exceed ${MAX_BOOKING_HOURS} hours.`);
+                return;
+            }
+
+            payload.targetAreaId = selectedAreaId;
+            payload.date = document.getElementById('areaBookDate').value;
+            payload.time = startTimeStr;
+            payload.partySize = document.getElementById('mPartyInput').value;
+            payload.duration = calcDuration;
+        } else {
+            payload.tableId = selectedTableId;
+            payload.date = document.getElementById('bookDate').value;
+            payload.time = document.getElementById('bookingModal').dataset.selectedTime;
+            payload.partySize = document.getElementById('mPartyInput').value;
+            payload.duration = parseInt(document.getElementById('bookDuration').value);
+        }
+
+        // POST to Spring Boot Backend
+        try {
+            const response = await fetch('http://localhost:8080/api/reservations', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if(response.ok) {
+                const result = await response.json();
+
+                closeModal();
+                await loadTablesFromBackend(); // Sync all arrays from the source of truth
+
+                if (isAreaBooking) {
+                    alert('Area successfully reserved for a private event!');
+                } else {
+                    alert('Table reserved successfully in the Live Database!');
+                }
+            } else {
+                const errorMsg = await response.text();
+                if (errorMsg.includes("Customer not found")) {
+                    alert("Session Expired: Your profile was deleted from the database! Logging you out...");
+                    localStorage.clear();
+                    window.location.href = "/login";
+                } else if (errorMsg.includes("Security Violation")) {
+                    alert(errorMsg); // Specifically bubble up temporal bounds
+                } else {
+                    alert("Backend Error: " + errorMsg);
+                }
+            }
+        } catch (err) {
+            alert("Failed to reach Spring Boot Backend. Is it running?");
+            console.error(err);
+        }
+    }
+
+    let resFilter = 'ALL';
+
+    function setResFilter(filterKey) {
+        resFilter = filterKey;
+
+        // Reset active tabs CSS
+        ['All', 'Table', 'Area'].forEach(f => {
+            const btn = document.getElementById('resFilter' + f);
+            btn.className = "px-4 py-2 text-sm font-bold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition-colors";
+        });
+
+        // Highlight active tab
+        let activeId = 'resFilterAll';
+        if(filterKey === 'TABLE') activeId = 'resFilterTable';
+        if(filterKey === 'AREA') activeId = 'resFilterArea';
+
+        document.getElementById(activeId).className = "px-4 py-2 text-sm font-bold border-b-2 transition-colors border-orange-500 text-orange-600";
+
+        renderMyReservations();
+    }
+
+    // Custom Bookings Render
+    function renderMyReservations() {
+        const container = document.getElementById('myResContainer');
+        if(!container) return;
+
+        // Update Stats
+        if (document.getElementById('statTotalRes')) {
+            document.getElementById('statTotalRes').innerText = customerReservations.length;
+            document.getElementById('statTableRes').innerText = customerReservations.filter(r => r.type === 'TABLE').length;
+            document.getElementById('statAreaRes').innerText = customerReservations.filter(r => r.type === 'AREA').length;
+        }
+
+        let filteredRes = customerReservations;
+        if (resFilter !== 'ALL') {
+            filteredRes = customerReservations.filter(r => r.type === resFilter);
+        }
+
+        if(filteredRes.length === 0) {
+            container.innerHTML = `<div class="p-8 text-center bg-gray-50 text-gray-500 rounded-lg border shadow-sm">You have not made any ${resFilter !== 'ALL' ? resFilter.toLowerCase() + ' ' : ''}reservations yet.</div>`;
+            return;
+        }
+
+        try {
+            const generatedHtml = filteredRes.map(r => `
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border shadow-sm">
+                        <div class="flex-1">
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                                <div class="flex items-start gap-2">
+                                    <div>
+                                        <p class="text-xs text-gray-500">Date</p>
+                                        <p class="text-sm font-medium text-gray-900">${r.date}</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-2">
+                                    <div>
+                                        <p class="text-xs text-gray-500">Scheduled Time</p>
+                                        <p class="text-sm font-medium text-gray-900">
+                                            Arrival: <span class="font-bold">${r.time || 'N/A'}</span><br>
+                                            Departure: <span class="font-bold text-gray-600">${r.endTime || 'N/A'}</span>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-2">
+                                    <div>
+                                        <p class="text-xs text-gray-500">Location & Capacity</p>
+                                        <p class="text-sm font-medium text-gray-900">${r.tableNumber || 'N'} - ${r.area || 'A'}</p>
+                                        <p class="text-xs text-gray-500 mt-0.5">Max allowed: ${r.capacity} pax</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-2">
+                                    <div>
+                                        <p class="text-xs text-gray-500">Your Party Size</p>
+                                        <p class="text-sm font-medium text-gray-900">${r.partySize || 0} guests</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            ${r.features && r.features.length > 0 ? `
+                            <div class="flex flex-wrap gap-2 pt-3 border-t border-gray-200">
+                                ${r.features.map(f => `<span class="inline-flex items-center rounded-full bg-orange-50 px-2 py-0.5 text-xs font-medium text-orange-700 ring-1 ring-inset ring-orange-600/10">${f}</span>`).join('')}
+                            </div>
+                            ` : ''}
+                        </div>
+
+                        <div class="flex flex-col items-end justify-center gap-3 ml-6 self-start md:self-center">
+                            <span class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${r.status==='CANCELLED' ? 'bg-red-100 text-red-800 border-red-200' : 'bg-green-100 text-green-800 border-green-200'}">${r.status || 'Past'}</span>
+                            ${r.status !== 'CANCELLED' ? `
+                            <button onclick="cancelReservation('${r.id}', '${r.type}', '${r.date}', '${r.time}')" class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-gray-300 bg-white hover:bg-red-50 hover:text-red-700 h-8 px-3 text-gray-900">
+                                Cancel
+                            </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `).join('');
+
+            container.innerHTML = generatedHtml;
+
+            lucide.createIcons();
+        } catch (err) {
+            container.innerHTML = `<div class="p-8 text-center bg-red-50 text-red-600 rounded-lg border font-bold">FATAL ERROR DRAWING CARDS: ${err.message}</div>`;
+            console.error(err);
+        }
+    }
+    async function cancelReservation(id, type, date, time) {
+        // Compute Time difference correctly
+        const resDateTime = new Date(`${date}T${time}:00`);
+        const diffHours = (resDateTime - CURRENT_TIME) / (1000 * 60 * 60);
+
+        if (type === 'TABLE' && diffHours < 24) {
+            alert("Table Reservations strictly require at least a 24-hour cancellation notice. Your reservation is too close to cancel.");
+            return;
+        }
+        if (type === 'AREA' && diffHours < 72) {
+            alert("VIP Area Events strictly require at least a 3-day (72 hour) cancellation notice. Your event is too close to cancel.");
+            return;
+        }
+
+        if(confirm("Are you sure you want to completely cancel this reservation?")) {
+            try {
+                const response = await fetch(`http://localhost:8080/api/reservations/${id}/status`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'CANCELLED', type: type })
+                });
+                if (response.ok) {
+                    alert("Reservation cancelled successfully.");
+                    loadTablesFromBackend(); // refresh local arrays and UI
+                    renderMyReservations();
+                } else {
+                    const err = await response.text();
+                    alert("Cancellation failed: " + err);
+                }
+            } catch(e) {
+                alert("Error: " + e);
+            }
+        }
+    }
+
+    // ==========================================
+    // ⚙️ PROFILE SETTINGS LOGIC
+    // ==========================================
+    async function loadProfile() {
+        try {
+            const response = await fetch(`http://localhost:8080/api/customers/${sessionId}`);
+            if (response.ok) {
+                const data = await response.json();
+                document.getElementById('profName').value = data.username || '';
+                document.getElementById('profEmail').value = data.email || '';
+                document.getElementById('profPhone').value = data.phoneNumber || '';
+            }
+        } catch (err) {
+            console.error("Failed to load profile:", err);
+        }
+    }
+
+    async function updateProfile(event) {
+        event.preventDefault();
+        const payload = {
+            name: document.getElementById('profName').value,
+            email: document.getElementById('profEmail').value,
+            phone: document.getElementById('profPhone').value,
+            password: document.getElementById('profPassword').value
+        };
+
+        try {
+            const response = await fetch(`http://localhost:8080/api/customers/${sessionId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                const updated = await response.json();
+                alert("Profile updated successfully!");
+                localStorage.setItem('restaurantSessionUserName', updated.username);
+                document.getElementById('sidebarFullName').innerText = updated.username;
+                // Update Initials
+                const parts = updated.username.split(' ').filter(p => p.trim() !== '');
+                let initials = parts.length > 1 ? parts[0].charAt(0) + parts[parts.length - 1].charAt(0) : updated.username.charAt(0);
+                document.getElementById('sidebarInitials').innerText = initials.toUpperCase();
+                document.getElementById('profPassword').value = '';
+            } else {
+                alert("Update failed.");
+            }
+        } catch (err) {
+            alert("Error updating profile.");
+        }
+    }
+
+    async function deleteAccount() {
+        const confirmed = confirm("WARNING: This will permanently delete your account and ALL associated reservations. This action CANNOT be undone. Are you absolutely sure?");
+        if (!confirmed) return;
+
+        try {
+            const response = await fetch(`http://localhost:8080/api/customers/${sessionId}`, {
+                method: 'DELETE'
+            });
+            if (response.ok) {
+                alert("Account successfully deleted. Returning to login.");
+                localStorage.removeItem('restaurantSessionUserId');
+                localStorage.removeItem('restaurantSessionUserName');
+                localStorage.removeItem('restaurantSessionRole');
+                window.location.replace('/login');
+            } else {
+                alert("Failed to delete account. Please try again.");
+            }
+        } catch (err) {
+            alert("Server error. Could not delete account.");
+        }
+    }
+
+    // Init page
+    document.getElementById('currentDateInput').value = formatDateForInput(CURRENT_TIME);
+    document.getElementById('currentTimeInput').value = formatTimeForInput(CURRENT_TIME);
+
+    const simDateStr = formatDateForInput(CURRENT_TIME);
+    const nextHourDate = new Date(CURRENT_TIME);
+    nextHourDate.setHours(nextHourDate.getHours() + 1);
+    nextHourDate.setMinutes(0);
+    const simNextHourStr = formatTimeForInput(nextHourDate);
+
+    // Removed the hardcoded .min overrides so initializeDateConstraints() rules persist
+
+    // Default values
+    document.getElementById('bookDate').value = simDateStr;
+
+    const areaDefault = new Date(CURRENT_TIME);
+    areaDefault.setDate(areaDefault.getDate() + 7);
+    document.getElementById('areaBookDate').value = formatDateForInput(areaDefault);
+
+
+
+    checkFilters();
+    renderAreaBookings();
+    loadTablesFromBackend();
+    loadProfile();
+
+    // Execute initial URL route
+    parseUrlToView();
+</script>
+</body>
+</html>
