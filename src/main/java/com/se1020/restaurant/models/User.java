@@ -2,9 +2,10 @@ package com.se1020.restaurant.models;
 
 import jakarta.persistence.*;
 
-@Entity
-@Table(name = "users")
-public class User {
+import jakarta.persistence.MappedSuperclass;
+
+@MappedSuperclass
+public abstract class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -13,7 +14,6 @@ public class User {
     private String username;
     private String email;
     private String password;
-    private String role; // Stores "CUSTOMER" or "ADMIN"
 
     public User() {}
 
@@ -30,6 +30,4 @@ public class User {
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
 
-    public String getRole() { return role; }
-    public void setRole(String role) { this.role = role; }
 }
