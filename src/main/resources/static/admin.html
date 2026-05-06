@@ -1,0 +1,1579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RestaurantHub | Admin Dashboard</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .modal { display: none; opacity: 0; transition: opacity 0.2s ease; }
+        .modal.active { display: flex; opacity: 1; }
+
+        .timeline-grid {
+            display: grid;
+
+        }
+        .sticky-left { position: sticky; left: 0; z-index: 20; }
+        .sticky-top { position: sticky; top: 0; z-index: 30; }
+        .sticky-corner { position: sticky; top: 0; left: 0; z-index: 40; }
+    </style>
+
+    <script>
+
+        // ==========================================
+        // OVERRIDE DEFAULT BROWSER ALERTS WITH TOASTS
+        // ==========================================
+        window.alert = function(message) {
+            const container = document.getElementById('toast-container');
+            if (!container) {
+                console.log("Alert:", message);
+                return;
+            }
+
+            const toast = document.createElement('div');
+
+            // Auto-detect if it's an error/warning based on common keywords in the message
+            const msgLower = message.toLowerCase();
+            const isError = msgLower.includes('fail') || msgLower.includes('invalid') || msgLower.includes('error') ||
+                msgLower.includes('overlap') || msgLower.includes('minimum') || msgLower.includes('maximum') ||
+                msgLower.includes('must') || msgLower.includes('not found') || msgLower.includes('expired');
+
+            // Base styling
+            toast.className = `transform transition-all duration-300 translate-x-full opacity-0 flex items-center gap-3 px-5 py-4 rounded-xl shadow-2xl border text-sm font-semibold max-w-md pointer-events-auto cursor-pointer `;
+
+            if (isError) {
+                toast.className += 'bg-white/70 backdrop-blur-md border-red-100 text-red-900';
+            } else {
+                toast.className += 'bg-gray-900/70 backdrop-blur-md border-gray-800 text-white';
+            }
+
+            const iconHTML = isError
+                ? `<svg class="w-5 h-5 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`
+                : `<svg class="w-5 h-5 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+
+            toast.innerHTML = `${iconHTML} <span>${message}</span>`;
+
+            // Click to dismiss early
+            toast.onclick = () => {
+                toast.classList.add('opacity-0', 'translate-x-full');
+                setTimeout(() => toast.remove(), 300);
+            };
+
+            container.appendChild(toast);
+
+            // Trigger slide-in animation
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-x-full', 'opacity-0');
+            });
+
+            // Auto remove after 4 seconds
+            setTimeout(() => {
+                if(toast.parentElement) {
+                    toast.classList.add('opacity-0', 'translate-x-full');
+                    setTimeout(() => toast.remove(), 300);
+                }
+            }, 4000);
+        };
+
+        function checkAuth() {
+            if (!localStorage.getItem('restaurantSessionUserId') || localStorage.getItem('restaurantSessionRole') !== 'ADMIN') {
+                window.location.replace('/login.html');
+            }
+        }
+        checkAuth();
+        window.addEventListener('pageshow', function(e) {
+            if (e.persisted || (window.performance && window.performance.getEntriesByType && window.performance.getEntriesByType('navigation').length > 0 && window.performance.getEntriesByType('navigation')[0].type === 'back_forward')) {
+                checkAuth();
+            }
+        });
+        window.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'visible') checkAuth();
+        });
+    </script>
+</head>
+<body class="h-screen w-full bg-gray-50 flex text-slate-900 overflow-hidden">
+
+<!-- Global Toast Container -->
+<div id="toast-container" class="fixed top-6 right-6 z-[9999] flex flex-col gap-3 pointer-events-none"></div>
+
+
+<!-- Sidebar Navigation -->
+<aside class="w-64 bg-slate-50/50 border-r border-gray-200 p-4 flex flex-col shadow-sm z-10 hidden md:flex h-screen flex-shrink-0">
+    <div class="mb-8 pl-3 pt-2">
+        <div class="flex items-center gap-3 mb-2">
+            <div class="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center shadow-sm">
+                <i data-lucide="utensils" class="w-4 h-4 text-white"></i>
+            </div>
+            <h1 class="text-xl font-bold text-gray-900">RestaurantHub</h1>
+        </div>
+        <p class="text-[10px] text-gray-500 font-bold tracking-widest uppercase">Global Admin</p>
+    </div>
+
+    <nav class="flex-1 space-y-1.5">
+        <button id="tab-btn-overview" onclick="switchTab('overview')" class="w-full text-left py-3 px-3 rounded-lg flex items-center gap-3 hover:bg-gray-100 text-gray-700 transition-all">
+            <i data-lucide="layout-dashboard" class="w-5 h-5 opacity-90"></i>
+            <div class="flex flex-col">
+                <span class="text-sm font-medium leading-none mb-1">Overview</span>
+                <span class="text-[11px] text-gray-400 font-medium leading-none">System analytics</span>
+            </div>
+        </button>
+        <button id="tab-btn-floorplan" onclick="switchTab('floorplan')" class="w-full text-left py-3 px-3 rounded-lg flex items-center gap-3 hover:bg-gray-100 text-gray-700 transition-all">
+            <i data-lucide="grid-3x3" class="w-5 h-5 text-gray-500"></i>
+            <div class="flex flex-col">
+                <span class="text-sm font-medium leading-none mb-1">Areas & Tables</span>
+                <span class="text-[11px] text-gray-500 font-medium leading-none">Manage Areas & Tables</span>
+            </div>
+        </button>
+        <button id="tab-btn-waiters" onclick="switchTab('waiters')" class="w-full text-left py-3 px-3 rounded-lg flex items-center gap-3 hover:bg-gray-100 text-gray-700 transition-all">
+            <i data-lucide="contact" class="w-5 h-5 text-gray-500"></i>
+            <div class="flex flex-col">
+                <span class="text-sm font-medium leading-none mb-1">Waiters</span>
+                <span class="text-[11px] text-gray-500 font-medium leading-none">Manage waiters</span>
+            </div>
+        </button>
+        <button id="tab-btn-customers" onclick="switchTab('customers')" class="w-full text-left py-3 px-3 rounded-lg flex items-center gap-3 hover:bg-gray-100 text-gray-700 transition-all">
+            <i data-lucide="users" class="w-5 h-5 text-gray-500"></i>
+            <div class="flex flex-col">
+                <span class="text-sm font-medium leading-none mb-1">Customers</span>
+                <span class="text-[11px] text-gray-500 font-medium leading-none">Manage customers</span>
+            </div>
+        </button>
+        <button id="tab-btn-reservations" onclick="switchTab('reservations')" class="w-full text-left py-3 px-3 rounded-lg flex items-center gap-3 hover:bg-gray-100 text-gray-700 transition-all">
+            <i data-lucide="calendar" class="w-5 h-5 text-gray-500"></i>
+            <div class="flex flex-col">
+                <span class="text-sm font-medium leading-none mb-1">Reservations</span>
+                <span class="text-[11px] text-gray-500 font-medium leading-none"> Manage reservations</span>
+            </div>
+        </button>
+        <button id="tab-btn-schedule" onclick="switchTab('schedule')" class="w-full text-left py-3 px-3 rounded-lg flex items-center gap-3 hover:bg-gray-100 text-gray-700 transition-all">
+            <i data-lucide="calendar-days" class="w-5 h-5 text-gray-500"></i>
+            <div class="flex flex-col">
+                <span class="text-sm font-medium leading-none mb-1">Schedule View</span>
+                <span class="text-[11px] text-gray-500 font-medium leading-none">Timeline availability</span>
+            </div>
+        </button>            <button id="tab-btn-reviews" onclick="switchTab('reviews')" class="w-full text-left py-3 px-3 rounded-lg flex items-center gap-3 hover:bg-gray-100 text-gray-700 transition-all">
+        <i data-lucide="star" class="w-5 h-5 text-gray-400"></i>
+        <div class="flex flex-col">
+            <span class="font-bold text-sm">Reviews</span>
+            <span class="text-[10px] text-gray-500 font-normal mt-0.5">Manage feedback</span>
+        </div>
+    </button>
+
+    </nav>
+
+    <div class="mt-4 pt-4 border-t border-gray-100 space-y-1">
+        <button onclick="localStorage.clear(); window.location.replace('/login.html');" class="flex items-center gap-2 mt-auto p-2 hover:bg-red-50 text-red-600 rounded-lg group transition-colors text-left w-full">
+            <i data-lucide="log-out" class="w-4 h-4 group-hover:-translate-x-0.5 transition-transform"></i>
+            <span class="text-sm font-medium">Log out Admin</span>
+        </button>
+    </div>
+</aside>
+
+<!-- Main Content -->
+<main class="flex-1 bg-gray-50 overflow-y-auto w-full p-8 relative">
+
+    <!-- Simulation Clock Container (Top Right) -->
+    <div class="fixed top-6 right-8 z-50">
+        <div class="flex items-center gap-3 px-3 py-2 rounded-lg bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+            <div class="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center text-orange-500 border border-orange-100">
+                <i data-lucide="clock" class="w-4 h-4"></i>
+            </div>
+            <div class="flex flex-col w-full">
+                <div class="flex justify-between items-center mb-1">
+                    <span id="timeLabel" class="text-[10px] font-bold text-orange-600 leading-none uppercase tracking-wider">Simulated Date & Time</span>
+                    <button onclick="resetSimulation()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded text-[9px] font-bold transition">RESET</button>
+                </div>
+                <div class="flex gap-2">
+                    <input type="date" id="currentDateInput" min="2020-01-01" max="2035-12-31" class="bg-transparent text-gray-900 font-bold focus:outline-none cursor-pointer text-sm leading-none w-[110px]" oninput="if(this.value && this.value.split('-')[0].length > 4) { this.value = '2035' + this.value.substring(this.value.indexOf('-')); } updateSystemDateTime();" onblur="if(!this.validity.valid || !this.value){ this.value='2026-04-06'; updateSystemDateTime(); }" title="Override date">
+                    <input type="time" id="currentTimeInput" class="bg-transparent text-gray-900 font-bold focus:outline-none focus:text-orange-600 cursor-pointer text-sm leading-none" oninput="if(this.value) updateSystemDateTime();" onblur="if(!this.validity.valid || !this.value){ this.value='11:30'; updateSystemDateTime(); }" title="Override time">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto">
+
+        <!-- ========================================== -->
+        <!-- TAB 1: OVERVIEW                            -->
+        <!-- ========================================== -->
+        <section id="tab-overview" class="tab-content space-y-8">
+            <div>
+                <h2 class="text-3xl font-bold text-gray-900">System Overview</h2>
+                <p class="text-gray-500 mt-1">Real-time statistics & global restaurant performance.</p>
+            </div>
+
+            <!-- Metric Cards -->
+            <div class="grid grid-cols-4 gap-6">
+                <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm font-semibold uppercase tracking-wide">Total Revenue Today</p>
+                            <p class="text-4xl font-bold text-gray-900 mt-2">$32,400</p>
+                            <p class="text-emerald-500 text-sm mt-3 flex items-center gap-1 font-medium bg-emerald-50 w-fit px-2 py-1 rounded">
+                                <i data-lucide="trending-up" class="w-4 h-4"></i> +18% from yesterday
+                            </p>
+                        </div>
+                        <div class="bg-gray-100 p-3 rounded-xl border border-gray-200">
+                            <i data-lucide="dollar-sign" class="w-6 h-6 text-gray-700"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm font-semibold uppercase tracking-wide leading-tight">Total Capacity</p>
+                            <div class="flex items-baseline gap-2 mt-2">
+                                <p class="text-4xl font-bold text-gray-900">142</p>
+                                <span class="text-gray-400 font-medium">seats</span>
+                            </div>
+                            <p class="text-blue-500 text-sm mt-3 flex items-center gap-1 font-medium bg-blue-50 w-fit px-2 py-1 rounded border border-blue-100">
+                                <!-- <i data-lucide="layers" class="w-4 h-4"></i>  -->
+                                Across 8 Areas, 50 Tables
+                            </p>
+                        </div>
+                        <div class="bg-gray-100 p-3 rounded-xl border border-gray-200">
+                            <i data-lucide="users" class="w-6 h-6 text-gray-700"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm font-semibold uppercase tracking-wide">Active Bookings</p>
+                            <div class="flex items-baseline gap-2 mt-2">
+                                <p class="text-4xl font-bold text-gray-900">45</p>
+                                <span class="text-gray-400 font-medium">online</span>
+                            </div>
+                            <p class="text-orange-500 text-sm mt-3 flex items-center gap-1 font-medium bg-orange-50 w-fit px-2 py-1 rounded">
+                                28 current walk-ins
+                            </p>
+                        </div>
+                        <div class="bg-gray-100 p-3 rounded-xl border border-gray-200">
+                            <i data-lucide="calendar" class="w-6 h-6 text-gray-700"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm font-semibold uppercase tracking-wide">Average Rating</p>
+                            <div class="flex items-center gap-2 mt-2">
+                                <p class="text-4xl font-bold text-gray-900">4.8</p>
+                                <div class="flex gap-1 mt-1">
+                                    <i data-lucide="star" class="w-5 h-5 fill-orange-400 text-orange-400"></i>
+                                    <i data-lucide="star" class="w-5 h-5 fill-orange-400 text-orange-400"></i>
+                                    <i data-lucide="star" class="w-5 h-5 fill-orange-400 text-orange-400"></i>
+                                    <i data-lucide="star" class="w-5 h-5 fill-orange-400 text-orange-400"></i>
+                                    <i data-lucide="star-half" class="w-5 h-5 fill-orange-400 text-orange-400"></i>
+                                </div>
+                            </div>
+                            <p class="text-gray-500 text-sm mt-3 font-medium bg-gray-50 w-fit px-2 py-1 rounded border border-gray-100">
+                                Based on 247 reviews
+                            </p>
+                        </div>
+                        <div class="bg-gray-100 p-3 rounded-xl border border-gray-200">
+                            <i data-lucide="star" class="w-6 h-6 text-gray-700"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pure HTML Charts -->
+            <div class="grid grid-cols-2 gap-6 mt-8">
+                <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+                    <h3 class="text-lg font-bold text-gray-900 mb-6">Weekly Revenue (Pure CSS)</h3>
+                    <div class="h-64 flex items-end justify-between gap-3 border-b border-gray-200 pb-2 relative">
+                        <!-- Y-Axis markers -->
+                        <div class="absolute inset-0 flex flex-col justify-between pointer-events-none">
+                            <div class="border-t border-dashed border-gray-200 w-full"></div>
+                            <div class="border-t border-dashed border-gray-200 w-full"></div>
+                            <div class="border-t border-dashed border-gray-200 w-full"></div>
+                            <div class="border-t border-dashed border-gray-200 w-full"></div>
+                        </div>
+                        <!-- Bars -->
+                        <div class="w-full flex items-end justify-between px-2 h-full z-10">
+                            <div class="w-10 bg-gradient-to-t from-orange-200 to-orange-400 rounded-t-md hover:from-orange-300 transition-colors" style="height: 40%;"></div>
+                            <div class="w-10 bg-gradient-to-t from-orange-200 to-orange-400 rounded-t-md hover:from-orange-300 transition-colors" style="height: 55%;"></div>
+                            <div class="w-10 bg-gradient-to-t from-orange-200 to-orange-400 rounded-t-md hover:from-orange-300 transition-colors" style="height: 60%;"></div>
+                            <div class="w-10 bg-gradient-to-t from-orange-200 to-orange-400 rounded-t-md hover:from-orange-300 transition-colors relative group cursor-pointer" style="height: 80%;">
+                                <div class="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity font-medium shadow-md">$18,900</div>
+                            </div>
+                            <div class="w-10 bg-gradient-to-t from-orange-200 to-orange-400 rounded-t-md hover:from-orange-300 transition-colors relative group cursor-pointer" style="height: 100%;">
+                                <div class="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity font-medium shadow-md">$25,600</div>
+                            </div>
+                            <div class="w-10 bg-gradient-to-t from-orange-200 to-orange-400 rounded-t-md hover:from-orange-300 transition-colors relative group cursor-pointer" style="height: 90%;">
+                                <div class="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity font-medium shadow-md">$22,400</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex justify-between w-full px-2 mt-3 text-gray-500 text-xs font-semibold uppercase tracking-wider">
+                        <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+                    <h3 class="text-lg font-bold text-gray-900 mb-6">Booking Distribution</h3>
+                    <div class="h-64 flex items-end justify-center gap-16 border-b border-gray-200 pb-2 relative">
+                        <div class="absolute inset-0 flex flex-col justify-between pointer-events-none">
+                            <div class="border-t border-dashed border-gray-200 w-full"></div>
+                            <div class="border-t border-dashed border-gray-200 w-full"></div>
+                            <div class="border-t border-dashed border-gray-200 w-full"></div>
+                        </div>
+                        <div class="w-24 bg-gray-800 rounded-t-xl hover:bg-gray-900 transition-colors cursor-pointer relative group z-10" style="height: 70%;">
+                            <div class="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs font-medium py-1 px-3 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">Online: 45</div>
+                        </div>
+                        <div class="w-24 bg-gray-300 rounded-t-xl hover:bg-gray-400 transition-colors cursor-pointer relative group z-10" style="height: 45%;">
+                            <div class="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs font-medium py-1 px-3 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">Walk-In: 28</div>
+                        </div>
+                    </div>
+                    <div class="flex justify-center gap-16 mt-4">
+                        <div class="w-24 text-center text-gray-700 font-semibold text-sm">Online</div>
+                        <div class="w-24 text-center text-gray-700 font-semibold text-sm">Walk-Ins</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TAB 2: ARCHITECTURE (FLOORPLAN)            -->
+        <!-- ========================================== -->
+        <section id="tab-floorplan" class="tab-content space-y-8">
+            <div>
+                <h2 class="text-3xl font-bold text-gray-900">Area / Tables Database</h2>
+                <p class="text-gray-500 mt-1">Manage physical restaurant areas and table components via Composition.</p>
+            </div>
+
+
+
+
+
+
+            <div class="grid grid-cols-2 gap-8">
+                <!-- Area Management -->
+                <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+                    <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
+                        <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                            <i data-lucide="land-plot" class="w-5 h-5 text-orange-500"></i> Dining Areas
+                            <span id="area-total-count" class="bg-orange-50 text-orange-600 border border-orange-100 text-xs px-2 py-0.5 rounded-full font-bold ml-2"></span>
+                        </h3>
+                        <!-- TODO API: Call /api/areas via POST here -->
+                        <button onclick="openModal('area')" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors shadow-sm">
+                            <i data-lucide="plus" class="w-4 h-4"></i> New Area
+                        </button>
+                    </div>
+
+                    <div class="space-y-4" id="area-list-container"></div></div><!-- Table Visualizer -->
+                <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+                    <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
+                        <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                            <i data-lucide="grid-3x2" class="w-5 h-5 text-orange-500 mr-1"></i>
+                            <div>Tables: <span class="text-gray-500 font-medium tracking-tight">Main Dining Room</span></div>
+                            <span id="table-total-count" class="bg-gray-100 text-gray-600 border border-gray-200 text-xs px-2 py-0.5 rounded-full font-bold ml-1">12 Tables</span>
+                        </h3>
+                        <!-- TODO API: Add table to selected area -->
+                        <button onclick="openModal('table')" class="bg-gray-900 border border-gray-800 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors shadow-sm">
+                            <i data-lucide="plus" class="w-4 h-4"></i> Add Table
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4" id="table-grid-container"></div></div></div></section>
+
+        <!-- ========================================== -->
+        <!-- TAB 3: WAITER MANAGEMENT                   -->
+        <!-- ========================================== -->
+        <!-- TAB 3: WAITER MANAGEMENT                   -->
+        <!-- ========================================== -->
+        <section id="tab-waiters" class="tab-content space-y-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-900">Waiters Database</h2>
+                    <p class="text-gray-500 mt-1">Manage internal Waiter Dashboard access (Edit name, email, credentials)</p>
+                </div>
+                <button onclick="openModal('waiter')" class="bg-gray-900 hover:bg-gray-800 text-white px-5 py-2.5 rounded-lg font-semibold flex items-center gap-2 transition-colors shadow-sm">
+                    <i data-lucide="user-plus" class="w-4 h-4"></i> Add Waiter
+                </button>
+            </div>
+
+            <div class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+                <table class="w-full">
+                    <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">ID</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Staff Name</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Email System Login</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody id="waiter-table-body" class="divide-y divide-gray-100">
+                    <!-- Dynamic JS Render -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TAB 4: CUSTOMER MANAGEMENT & SEARCH        -->
+        <!-- ========================================== -->
+        <section id="tab-customers" class="tab-content space-y-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-900">Customer Database</h2>
+                    <p class="text-gray-500 mt-1 flex items-center gap-2">Manage customer profiles and history. <span id="customer-count" class="bg-gray-100 text-gray-600 border border-gray-200 text-xs px-2 py-0.5 rounded-full font-bold">Showing 2,143 records</span></p>
+                </div>
+            </div>
+
+            <!-- Admin Search Box requested by User -->
+            <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex items-center justify-between">
+                <div class="relative w-1/2">
+                    <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"></i>
+                    <input type="text" placeholder="Search customer by name, email, or phone..." class="pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 text-gray-900 text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 w-full transition-shadow">
+                </div>
+                <div class="flex items-center gap-2 text-sm text-gray-500 font-medium">
+                    <i data-lucide="filter" class="w-4 h-4"></i>
+                    <span id="customer-count"></span>
+                </div>
+            </div>
+
+            <div class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+                <table class="w-full">
+                    <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-16">ID</th>
+                        <!-- Added Full Name / Username column -->
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Full Name</th>
+                        <!-- Added Phone column -->
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Phone Number</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Email Address</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Loyalty</th>
+                        <th class="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody id="customer-table-body" class="divide-y divide-gray-100">
+                    <!-- Dynamic JS Render -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TAB 5: RESERVATION CONTROL                 -->
+        <!-- ========================================== -->
+        <section id="tab-reservations" class="tab-content space-y-6">
+            <div>
+                <h2 class="text-3xl font-bold text-gray-900">Reservations Database</h2>
+                <p class="text-gray-500 mt-1">Manage upcoming bookings or view reservation history.</p>
+            </div>
+
+            <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+                <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
+                    <div class="flex bg-gray-100 p-1 rounded-lg">
+                        <button onclick="toggleResView('upcoming')" id="btn-res-upcoming" class="px-4 py-2 bg-white text-gray-900 font-bold text-sm rounded shadow-sm transition-all outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none active:outline-none active:ring-0">Upcoming</button>
+                        <button onclick="toggleResView('history')" id="btn-res-history" class="px-4 py-2 text-gray-500 hover:text-gray-700 font-bold text-sm rounded transition-all outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none active:outline-none active:ring-0">History</button>
+                    </div>
+
+                    <!-- Added Date Filter per user request -->
+                    <div class="flex items-center gap-3 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200">
+                        <label for="reservation-date-filter" class="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
+                            <i data-lucide="calendar" class="w-3.5 h-3.5 text-orange-500"></i> Date Filter
+                        </label>
+                        <input type="date" id="reservation-date-filter" class="bg-transparent border-none text-sm text-gray-900 font-bold focus:outline-none focus:ring-0 cursor-pointer">
+                    </div>
+                </div>
+
+                <!-- Upcoming Reservations View -->
+                <div id="res-view-upcoming" class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                        <tr class="bg-gray-50 border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                            <th class="px-6 py-4 rounded-tl-xl whitespace-nowrap">Customer</th>
+                            <th class="px-6 py-4 whitespace-nowrap">Schedule</th>
+                            <th class="px-6 py-4 whitespace-nowrap">Location</th>
+                            <th class="px-6 py-4 whitespace-nowrap">Guests</th>
+                            <th class="px-6 py-4 whitespace-nowrap">Status</th>
+                            <th class="px-6 py-4 text-right rounded-tr-xl whitespace-nowrap">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody id="res-upcoming-body" class="divide-y divide-gray-100">
+                        <!-- Dynamic JS Render -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Reservation History View -->
+                <div id="res-view-history" class="overflow-x-auto hidden">
+                    <table class="w-full text-left border-collapse opacity-75">
+                        <thead>
+                        <tr class="bg-gray-100 border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                            <th class="px-6 py-4 rounded-tl-xl text-gray-400 whitespace-nowrap">Customer</th>
+                            <th class="px-6 py-4 text-gray-400 whitespace-nowrap">Schedule</th>
+                            <th class="px-6 py-4 text-gray-400 whitespace-nowrap">Location</th>
+                            <th class="px-6 py-4 text-gray-400 whitespace-nowrap">Guests</th>
+                            <th class="px-6 py-4 text-gray-400 whitespace-nowrap">Status</th>
+                        </tr>
+                        </thead>
+                        <tbody id="res-history-body" class="divide-y divide-gray-100">
+                        <!-- Dynamic JS Render -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-schedule" class="tab-content space-y-6">
+            <div class="flex justify-between items-end">
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-900">Timeline Schedule</h2>
+                    <p class="text-gray-500 mt-1">Visualize table availability and reservations dynamically.</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <label class="text-sm font-bold text-gray-700">Select Date:</label>
+                    <input type="date" id="schedule-date-picker" onchange="renderSchedule()" class="px-4 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium shadow-sm">
+                </div>
+            </div>
+
+            <div class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden flex flex-col relative" style="height: 600px;">
+                <div class="overflow-auto flex-1 relative bg-gray-50" id="schedule-timeline-container">
+                    <!-- JS renders the CSS Grid here -->
+                </div>
+            </div>
+        </section>
+
+
+
+
+        <!-- ========================================== -->
+        <!-- TAB 6: CUSTOMER REVIEWS                    -->
+        <!-- ========================================== -->
+        <section id="tab-reviews" class="tab-content space-y-6">
+            <div>
+                <h2 class="text-3xl font-bold text-gray-900">Feedbacks Database</h2>
+                <p class="text-gray-500 mt-1">Review customer satisfaction and remove inappropriate public content.</p>
+            </div>
+
+            <!-- Review Filter System requested by User -->
+            <div class="flex items-center gap-4 bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+                <div class="relative flex-1">
+                    <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"></i>
+                    <input type="text" placeholder="Search customer by email..." class="pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 text-gray-900 text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 w-full transition-shadow">
+                </div>
+                <select class="py-2.5 pl-4 pr-10 bg-gray-50 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 appearance-none min-w-[160px] bg-no-repeat" style="background-image: url('data:image/svg+xml;utf8,<svg fill=%22none%22 stroke=%22currentColor%22 viewBox=%220 0 24 24%22 xmlns=%22http://www.w3.org/2000/svg%22><path stroke-linecap=%22round%22 stroke-linejoin=%22round%22 stroke-width=%222%22 d=%22M19 9l-7 7-7-7%22></path></svg>'); background-position: right 1rem center; background-size: 1.25rem;">
+                    <option value="all">All Star Ratings</option>
+                    <option value="5">⭐⭐⭐⭐⭐ (5 Stars)</option>
+                    <option value="4">⭐⭐⭐⭐ (4 Stars)</option>
+                    <option value="3">⭐⭐⭐ (3 Stars)</option>
+                    <option value="2">⭐⭐ (2 Stars)</option>
+                    <option value="1">⭐ (1 Star)</option>
+                </select>
+            </div>
+
+            <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+                <div class="space-y-4">
+
+                    <div class="p-5 border border-gray-200 rounded-xl bg-gray-50 flex items-start justify-between group">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-4 mb-2">
+                                <p class="font-bold text-gray-900">david_t@workspace.com</p>
+                                <div class="flex gap-0.5">
+                                    <i data-lucide="star" class="w-4 h-4 fill-orange-400 text-orange-400"></i>
+                                    <i data-lucide="star" class="w-4 h-4 fill-orange-400 text-orange-400"></i>
+                                    <i data-lucide="star" class="w-4 h-4 fill-orange-400 text-orange-400"></i>
+                                    <i data-lucide="star" class="w-4 h-4 fill-orange-400 text-orange-400"></i>
+                                    <i data-lucide="star" class="w-4 h-4 text-gray-300"></i>
+                                </div>
+                                <span class="text-xs font-semibold text-gray-400">2 days ago</span>
+                            </div>
+                            <p class="text-gray-700 text-sm leading-relaxed">Great food and service. Highly recommend the BBQ area! The steaks were cooked perfectly and the waiter was incredibly attentive.</p>
+                        </div>
+                        <button class="ml-6 p-2 bg-white border border-gray-200 hover:bg-red-50 hover:border-red-200 rounded-lg transition-colors text-gray-400 hover:text-red-500 shadow-sm opacity-0 group-hover:opacity-100" title="Delete Content">
+                            <i data-lucide="trash-2" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+    </div>
+</main>
+
+<!-- ========================================== -->
+<!-- MODALS (Hidden by default)                 -->
+<!-- ========================================== -->
+
+
+<!-- Area Modal -->
+<div id="area-modal" class="modal fixed inset-0 bg-gray-900/40 backdrop-blur-sm items-center justify-center z-50">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl relative">
+        <h3 id="area-modal-title" class="text-xl font-bold text-gray-900 mb-6">Add New Area</h3>
+        <form id="area-form" onsubmit="event.preventDefault(); saveArea();" class="space-y-4">
+            <input type="hidden" id="area-id">
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1">Area Name</label>
+                <input type="text" id="area-name" required class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium">
+            </div>
+            <div class="flex items-center gap-2 mt-4">
+                <input type="checkbox" id="area-reservable" class="w-4 h-4 text-orange-500 rounded focus:ring-orange-500 cursor-pointer">
+                <label for="area-reservable" class="text-sm font-bold text-gray-700 cursor-pointer">Allow booking the entire area?</label>
+            </div>
+            <div class="flex gap-3 mt-8">
+                <button type="button" onclick="toggleModal('area-modal')" class="flex-1 px-4 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg text-sm font-bold text-gray-700 transition-colors">Cancel</button>
+                <button type="submit" class="flex-1 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 rounded-lg text-sm font-bold text-white transition-colors">Save Area</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Table Modal -->
+<div id="table-modal" class="modal fixed inset-0 bg-gray-900/40 backdrop-blur-sm items-center justify-center z-50">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-sm mx-4 shadow-2xl relative">
+        <h3 id="table-modal-title" class="text-xl font-bold text-gray-900 mb-6">Add New Table</h3>
+        <form id="table-form" onsubmit="event.preventDefault(); saveTable();" class="space-y-4">
+            <input type="hidden" id="table-id">
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1">Table Number</label>
+                <div class="flex items-center relative">
+                    <span class="absolute left-4 text-gray-400 font-bold">T-</span>
+                    <input type="text" id="table-number" required class="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium placeholder-gray-400" placeholder="01">
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1">Seating Capacity</label>
+                <input type="number" id="table-capacity" required min="1" max="20" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium">
+            </div>
+            <div class="flex gap-3 mt-8">
+                <button type="button" onclick="toggleModal('table-modal')" class="flex-1 px-4 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg text-sm font-bold text-gray-700 transition-colors">Cancel</button>
+                <button type="submit" class="flex-1 px-4 py-2.5 bg-gray-900 hover:bg-gray-800 rounded-lg text-sm font-bold text-white transition-colors">Save Table</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Waiter Modal -->
+<div id="waiter-modal" class="modal fixed inset-0 bg-gray-900/40 backdrop-blur-sm items-center justify-center z-50">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl relative">
+        <h3 class="text-xl font-bold text-gray-900 mb-6">Create Waiter Account</h3>
+        <form id="waiter-form" onsubmit="event.preventDefault(); saveWaiter();" class="space-y-4">
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1">Full Name</label>
+                <input type="text" id="waiter-name" required class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium">
+            </div>
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1">Email Address</label>
+                <input type="email" id="waiter-email" required class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium">
+            </div>
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1">Initial Password</label>
+                <input type="password" id="waiter-password" required class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium">
+            </div>
+            <div class="flex gap-3 mt-8">
+                <button type="button" onclick="toggleModal('waiter-modal')" class="flex-1 px-4 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg text-sm font-bold text-gray-700 transition-colors">Cancel</button>
+                <button type="submit" class="flex-1 px-4 py-2.5 bg-gray-900 hover:bg-gray-800 rounded-lg text-sm font-bold text-white transition-colors">Create Account</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- Reservation Details Popup -->
+<div id="reservation-details-modal" class="modal fixed inset-0 bg-gray-900/40 backdrop-blur-sm items-center justify-center z-50">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-sm mx-4 shadow-2xl relative">
+        <div class="flex justify-between items-start mb-4">
+            <h3 class="text-xl font-bold text-gray-900">Reservation Details</h3>
+            <button onclick="toggleModal('reservation-details-modal')" class="text-gray-400 hover:text-gray-600 transition-colors bg-gray-50 hover:bg-gray-100 p-1.5 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+
+        <div class="space-y-4">
+            <div class="flex items-center gap-3 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                <div class="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-lg border border-orange-200" id="res-modal-initial"></div>
+                <div>
+                    <p class="font-bold text-gray-900" id="res-modal-name"></p>
+                    <p class="text-xs text-gray-500 font-medium" id="res-modal-contact"></p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                    <p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Time & Duration</p>
+                    <p class="font-bold text-gray-900 flex items-center gap-1.5"><i data-lucide="clock" class="w-3.5 h-3.5 text-orange-500"></i> <span id="res-modal-time"></span></p>
+                </div>
+                <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                    <p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Number of Guests</p>
+                    <p class="font-bold text-gray-900 flex items-center gap-1.5"><i data-lucide="users" class="w-3.5 h-3.5 text-blue-500"></i> <span id="res-modal-guests"></span></p>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                <p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">Location</p>
+                <p class="font-bold text-gray-900 flex items-center gap-1.5"><i data-lucide="map-pin" class="w-3.5 h-3.5 text-green-500"></i> <span id="res-modal-location"></span></p>
+            </div>
+
+            <div class="pt-4 flex justify-between items-center border-t border-gray-100">
+                <span class="text-sm font-bold text-gray-500">Current Status:</span>
+                <span id="res-modal-status" class="px-2.5 py-1 rounded text-xs uppercase tracking-wider font-black shadow-sm"></span>
+            </div>
+            <div id="res-modal-waiter-container" class="hidden pt-4 flex justify-between items-center border-t border-gray-100">
+                <span class="text-xs font-bold text-gray-500">Served By:</span>
+                <span id="res-modal-waiter" class="text-xs font-bold text-gray-900"></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Area Danger Zone Modal -->
+<div id="delete-area-modal" class="modal fixed inset-0 bg-gray-900/60 backdrop-blur-sm items-center justify-center z-50 transition-opacity">
+    <div class="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl transform transition-all">
+        <div class="flex flex-col items-center text-center">
+            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <i data-lucide="alert-triangle" class="w-8 h-8 text-red-600"></i>
+            </div>
+            <h3 id="delete-area-name" class="text-xl font-bold text-gray-900 mb-2">Delete Area?</h3>
+            <p class="text-red-600 font-semibold text-sm mb-2">This will permanently delete ALL TABLES within this area!</p>
+            <p class="text-gray-500 text-sm mb-6 px-2 leading-relaxed">
+                Executing this action cannot be undone. All associated tables and their configuration will be wiped from the system forever.
+            </p>
+        </div>
+        <div class="flex gap-3 w-full">
+            <button onclick="toggleModal('delete-area-modal')" class="flex-1 px-4 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 rounded-xl text-sm font-bold text-gray-700 transition-colors">Cancel</button>
+            <button onclick="confirmDeleteArea()" class="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 rounded-xl text-sm font-bold text-white transition-colors shadow-sm flex justify-center items-center gap-2">
+                <i data-lucide="trash-2" class="w-4 h-4"></i> Delete Area
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Table Modal -->
+<div id="delete-table-modal" class="modal fixed inset-0 bg-gray-900/60 backdrop-blur-sm items-center justify-center z-50 transition-opacity">
+    <div class="bg-white rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl transform transition-all">
+        <div class="flex flex-col items-center text-center">
+            <div class="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <i data-lucide="trash-2" class="w-7 h-7 text-red-600"></i>
+            </div>
+            <h3 id="delete-table-name" class="text-xl font-bold text-gray-900 mb-2">Delete Table?</h3>
+            <p class="text-gray-500 text-sm mb-6 leading-relaxed">
+                Are you sure you want to remove this table? Any future reservations associated with it might be affected.
+            </p>
+        </div>
+        <div class="flex gap-3 w-full">
+            <button onclick="toggleModal('delete-table-modal')" class="flex-1 px-4 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 rounded-xl text-sm font-bold text-gray-700 transition-colors">Cancel</button>
+            <button onclick="confirmDeleteTable()" class="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 rounded-xl text-sm font-bold text-white transition-colors shadow-sm flex justify-center items-center gap-2">
+                Delete
+            </button>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- ========================================== -->
+<!-- JAVASCRIPT (Single Page App Logic)         -->
+<!-- ========================================== -->
+<script>
+
+    // ==========================================
+    // OVERRIDE DEFAULT BROWSER ALERTS WITH TOASTS
+    // ==========================================
+    window.alert = function(message) {
+        const container = document.getElementById('toast-container');
+        if (!container) {
+            console.log("Alert:", message);
+            return;
+        }
+
+        const toast = document.createElement('div');
+
+        // Auto-detect if it's an error/warning based on common keywords in the message
+        const msgLower = message.toLowerCase();
+        const isError = msgLower.includes('fail') || msgLower.includes('invalid') || msgLower.includes('error') ||
+            msgLower.includes('overlap') || msgLower.includes('minimum') || msgLower.includes('maximum') ||
+            msgLower.includes('must') || msgLower.includes('not found') || msgLower.includes('expired');
+
+        // Base styling
+        toast.className = `transform transition-all duration-300 translate-x-full opacity-0 flex items-center gap-3 px-5 py-4 rounded-xl shadow-2xl border text-sm font-semibold max-w-md pointer-events-auto cursor-pointer `;
+
+        if (isError) {
+            toast.className += 'bg-white/70 backdrop-blur-md border-red-100 text-red-900';
+        } else {
+            toast.className += 'bg-gray-900/70 backdrop-blur-md border-gray-800 text-white';
+        }
+
+        const iconHTML = isError
+            ? `<svg class="w-5 h-5 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`
+            : `<svg class="w-5 h-5 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+
+        toast.innerHTML = `${iconHTML} <span>${message}</span>`;
+
+        // Click to dismiss early
+        toast.onclick = () => {
+            toast.classList.add('opacity-0', 'translate-x-full');
+            setTimeout(() => toast.remove(), 300);
+        };
+
+        container.appendChild(toast);
+
+        // Trigger slide-in animation
+        requestAnimationFrame(() => {
+            toast.classList.remove('translate-x-full', 'opacity-0');
+        });
+
+        // Auto remove after 4 seconds
+        setTimeout(() => {
+            if(toast.parentElement) {
+                toast.classList.add('opacity-0', 'translate-x-full');
+                setTimeout(() => toast.remove(), 300);
+            }
+        }, 4000);
+    };
+
+    // STATE
+
+    // ========================================================
+    // TIME UTILS & SIMULATOR
+    // ========================================================
+    let CURRENT_TIME = new Date('2026-04-06T11:30:00');
+    const savedTime = sessionStorage.getItem('simTime_admin');
+    if(savedTime) CURRENT_TIME = new Date(parseInt(savedTime));
+
+    function formatTimeForInput(date) {
+        return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+    }
+    function formatDateForInput(date) {
+        return `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+    }
+
+    window.updateSystemDateTime = () => {
+        const dateStr = document.getElementById('currentDateInput').value || formatDateForInput(new Date('2026-04-06'));
+        const timeStr = document.getElementById('currentTimeInput').value || '11:30';
+
+        const [year, month, day] = dateStr.split('-');
+        const [hours, mins] = timeStr.split(':');
+
+        let y = parseInt(year);
+        if(y > 2035) y = 2035;
+        if(y < 2020) y = 2020;
+
+        const newDate = new Date(y, parseInt(month)-1, parseInt(day), parseInt(hours), parseInt(mins), 0, 0);
+        CURRENT_TIME = newDate;
+        document.getElementById('currentDateInput').value = formatDateForInput(newDate);
+        sessionStorage.setItem('simTime_admin', CURRENT_TIME.getTime());
+
+        renderAll();
+    };
+
+    window.resetSimulation = () => {
+        sessionStorage.removeItem('simTime_admin');
+        CURRENT_TIME = new Date('2026-04-06T11:30:00');
+        document.getElementById('currentDateInput').value = formatDateForInput(CURRENT_TIME);
+        document.getElementById('currentTimeInput').value = formatTimeForInput(CURRENT_TIME);
+        renderAll();
+    };
+
+    let STATE = {
+
+        areas: [], tables: [], waiters: [], customers: [], reservations: [], reviews: []
+    };
+    let selectedAreaId = null;
+
+    async function loadBackendData() {
+        try {
+            const [areas, tables, waiters, customers, res] = await Promise.all([
+                fetch('/api/areas').then(r => r.json()),
+                fetch('/api/tables').then(r => r.json()),
+                fetch('/api/waiters').then(r => r.json()),
+                fetch('/api/customers').then(r => r.json()),
+                fetch('/api/reservations').then(r => r.json())
+            ]);
+
+            STATE.areas = areas;
+            STATE.tables = tables;
+            STATE.waiters = waiters;
+            STATE.customers = customers;
+            STATE.reservations = res;
+
+            // MOCK REVIEWS
+            STATE.reviews = [
+                { id: 1, email: "david_t@workspace.com", rating: 4, text: "Great food and service. Highly recommend the BBQ area! The steaks were cooked perfectly and the waiter was incredibly attentive.", date: "2 days ago" }
+            ];
+
+            if(STATE.areas.length > 0 && !selectedAreaId) selectedAreaId = STATE.areas[0].id;
+
+            renderAll();
+        } catch (e) {
+            console.error("Failed to load backend data:", e);
+        }
+    }
+
+
+    function renderSchedule() {
+        const container = document.getElementById('schedule-timeline-container');
+        const picker = document.getElementById('schedule-date-picker');
+        if(!container || !picker) return;
+
+        if(!picker.value) {
+            picker.value = document.getElementById('currentDateInput').value || formatDateForInput(new Date());
+        }
+
+        const targetDate = picker.value;
+
+        const colsCount = ((APP_CONFIG.restaurantCloseTime || 23) - (APP_CONFIG.restaurantOpenTime || 10) + 1) * 2;
+        const gridStyle = `grid-template-columns: 150px repeat(${colsCount}, minmax(40px, 1fr));`;
+        let headerHtml = `<div class="timeline-grid sticky-top shadow-sm bg-white" style="${gridStyle}">
+                                <div class="sticky-corner p-3 font-bold text-gray-700 flex items-center justify-center text-sm bg-white border-r border-b border-gray-200">Table / Area</div>`;
+        for(let h = (APP_CONFIG.restaurantOpenTime || 10); h <= (APP_CONFIG.restaurantCloseTime || 23); h++) {
+            const hourStr = h > 12 ? `${h-12} PM` : (h===12 ? `12 PM` : `${h} AM`);
+            headerHtml += `<div class="col-span-2 p-2 border-r border-b border-gray-200 text-center font-bold text-xs text-gray-500 bg-gray-50 flex items-center justify-center">${hourStr}</div>`;
+        }
+        headerHtml += `</div>`;
+
+        let rowsHtml = '';
+
+        STATE.areas.forEach(area => {
+            rowsHtml += `<div class="timeline-grid border-b border-gray-200 bg-gray-100" style="${gridStyle}">
+                                <div class="sticky-left p-2 pl-4 font-bold text-gray-900 text-sm flex items-center bg-gray-100 border-r border-gray-200">${area.name}</div>
+                                <div style="grid-column: span ${colsCount};"></div>
+                             </div>`;
+
+            const areaTables = STATE.tables.filter(t => t.area && t.area.id === area.id);
+            areaTables.forEach(table => {
+                const tableRes = STATE.reservations.filter(r =>
+                    r.reservationDate === targetDate &&
+                    r.table && r.table.id === table.id &&
+                    ['CONFIRMED', 'ARRIVED', 'DINING'].includes(r.status)
+                );
+
+                let rowContent = `<div class="timeline-grid border-b border-gray-100 hover:bg-gray-50 transition-colors relative group">
+                                        <div class="sticky-left p-3 pl-6 font-bold text-gray-700 text-sm flex items-center bg-white group-hover:bg-gray-50 border-r border-gray-200 z-20">T-${table.tableNumber} <span class="text-[10px] ml-2 text-gray-400">(${table.seatingCapacity})</span></div>`;
+
+                for(let i=0; i<28; i++) {
+                    rowContent += `<div class="border-r border-gray-100 ${i%2===0 ? 'border-dashed border-gray-200' : ''}"></div>`;
+                }
+
+                tableRes.forEach(r => {
+                    const [hours, mins] = r.reservationTime.split(':').map(Number);
+
+                    let offsetHours = hours - 10;
+                    let offsetMins = mins / 60;
+                    let startCol = 2 + (offsetHours * 2) + (offsetMins * 2);
+
+                    const duration = r.duration || 2;
+                    const spanCols = duration * 2;
+
+                    let colorClass = r.status === 'CONFIRMED' ? 'bg-blue-100 border-blue-300 text-blue-800' :
+                        (r.status === 'ARRIVED' ? 'bg-yellow-100 border-yellow-300 text-yellow-800' : 'bg-orange-100 border-orange-300 text-orange-800');
+
+                    if(startCol >= 2 && startCol < 30) {
+                        rowContent += `<div onclick="openResDetails(${r.id})" class="absolute inset-y-1 rounded-md border p-1.5 overflow-hidden shadow-sm flex flex-col justify-center cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all ${colorClass} z-10"
+                                                style="left: calc(150px + ((100% - 150px) * ${(startCol-2)/28})); width: calc(((100% - 150px) * ${spanCols/28}) - 4px);"
+                                                title="${(r.customer && r.customer.email !== 'walkin@restaurant.local') ? r.customer.username : (r.walkInName || 'Walk-In')} - ${r.partySize} Guests (${r.reservationTime})">
+                                                <div class="text-[10px] font-bold leading-tight truncate">${(r.customer && r.customer.email !== 'walkin@restaurant.local') ? r.customer.username : (r.walkInName || 'Walk-In')}</div>
+                                                <div class="text-[9px] font-medium leading-tight truncate opacity-80">${r.partySize} Guests</div>
+                                           </div>`;
+                    }
+                });
+
+                // Area Reservations Overlay
+                const areaRes = STATE.reservations.filter(r =>
+                    r.reservationDate === targetDate &&
+                    r.targetArea && r.targetArea.id === area.id &&
+                    ['CONFIRMED', 'ARRIVED', 'DINING'].includes(r.status)
+                );
+                areaRes.forEach(r => {
+                    const [hours, mins] = r.reservationTime.split(':').map(Number);
+                    let offsetHours = hours - 10;
+                    let offsetMins = mins / 60;
+                    let startCol = 2 + (offsetHours * 2) + (offsetMins * 2);
+                    const duration = r.duration || 2;
+                    const spanCols = duration * 2;
+
+                    if(startCol >= 2 && startCol < 30) {
+                        rowContent += `<div onclick="openResDetails(${r.id})" class="absolute inset-y-0 rounded-md border-2 border-red-400 bg-red-100/80 p-1.5 overflow-hidden shadow-sm flex flex-col justify-center cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all text-red-900 z-10"
+                                                style="left: calc(150px + ((100% - 150px) * ${(startCol-2)/28})); width: calc(((100% - 150px) * ${spanCols/28}) - 4px);"
+                                                title="AREA BOOKED: ${r.customer ? r.customer.username : 'Private Event'} - ${r.partySize} Guests (${r.reservationTime})">
+                                                <div class="text-[10px] font-black leading-tight truncate">VIP EVENT</div>
+                                           </div>`;
+                    }
+                });
+
+                rowContent += `</div>`;
+                rowsHtml += rowContent;
+            });
+        });
+
+        container.innerHTML = `<div class="min-w-[1000px]">` + headerHtml + rowsHtml + `</div>`;
+        lucide.createIcons();
+    }
+
+    function renderAll() {
+        renderOverview();
+        renderAreas();
+        renderTables();
+        renderWaiters();
+        renderCustomers();
+        renderReservations();
+        renderSchedule();
+    }
+
+    function renderOverview() {
+        const el = document.getElementById('tab-overview');
+        if(!el) return;
+
+        const totalCapacity = STATE.tables.reduce((acc, t) => acc + (t.seatingCapacity || 0), 0);
+        const activeBookings = STATE.reservations.filter(r => ['CONFIRMED', 'ARRIVED'].includes(r.status)).length;
+
+        const html = `
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-900">System Overview</h2>
+                    <p class="text-gray-500 mt-1">Real-time statistics & global restaurant performance.</p>
+                </div>
+                <div class="grid grid-cols-4 gap-6">
+                    <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm font-semibold uppercase tracking-wide">Total Revenue Today</p>
+                                <p class="text-4xl font-bold text-gray-900 mt-2">$0</p>
+                                <p class="text-emerald-500 text-sm mt-3 flex items-center gap-1 font-medium bg-emerald-50 w-fit px-2 py-1 rounded">
+                                    <i data-lucide="trending-up" class="w-4 h-4"></i> Live calculation pending
+                                </p>
+                            </div>
+                            <div class="bg-gray-100 p-3 rounded-xl border border-gray-200"><i data-lucide="dollar-sign" class="w-6 h-6 text-gray-700"></i></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm font-semibold uppercase tracking-wide leading-tight">Total Capacity</p>
+                                <div class="flex items-baseline gap-2 mt-2">
+                                    <p class="text-4xl font-bold text-gray-900">${totalCapacity}</p>
+                                    <span class="text-gray-400 font-medium">seats</span>
+                                </div>
+                                <p class="text-blue-500 text-sm mt-3 flex items-center gap-1 font-medium bg-blue-50 w-fit px-2 py-1 rounded border border-blue-100">
+                                    Across ${STATE.areas.length} Areas, ${STATE.tables.length} Tables
+                                </p>
+                            </div>
+                            <div class="bg-gray-100 p-3 rounded-xl border border-gray-200"><i data-lucide="users" class="w-6 h-6 text-gray-700"></i></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm font-semibold uppercase tracking-wide">Active Bookings</p>
+                                <div class="flex items-baseline gap-2 mt-2">
+                                    <p class="text-4xl font-bold text-gray-900">${activeBookings}</p>
+                                    <span class="text-gray-400 font-medium">upcoming/active</span>
+                                </div>
+                                <p class="text-orange-500 text-sm mt-3 flex items-center gap-1 font-medium bg-orange-50 w-fit px-2 py-1 rounded">Live</p>
+                            </div>
+                            <div class="bg-gray-100 p-3 rounded-xl border border-gray-200"><i data-lucide="calendar" class="w-6 h-6 text-gray-700"></i></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm font-semibold uppercase tracking-wide">Average Rating</p>
+                                <div class="flex items-center gap-2 mt-2">
+                                    <p class="text-4xl font-bold text-gray-900">4.8</p>
+                                    <div class="flex gap-1 mt-1">
+                                        <i data-lucide="star" class="w-5 h-5 fill-orange-400 text-orange-400"></i>
+                                        <i data-lucide="star" class="w-5 h-5 fill-orange-400 text-orange-400"></i>
+                                        <i data-lucide="star" class="w-5 h-5 fill-orange-400 text-orange-400"></i>
+                                        <i data-lucide="star" class="w-5 h-5 fill-orange-400 text-orange-400"></i>
+                                        <i data-lucide="star-half" class="w-5 h-5 fill-orange-400 text-orange-400"></i>
+                                    </div>
+                                </div>
+                                <p class="text-gray-500 text-sm mt-3 font-medium bg-gray-50 w-fit px-2 py-1 rounded border border-gray-100">Mock Data</p>
+                            </div>
+                            <div class="bg-gray-100 p-3 rounded-xl border border-gray-200"><i data-lucide="star" class="w-6 h-6 text-gray-700"></i></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        el.innerHTML = html;
+        lucide.createIcons();
+    }
+
+    // --- Render Area List ---
+    function renderAreas() {
+        const container = document.getElementById('area-list-container');
+        if(!container) return;
+
+        const areaHeaderCount = document.getElementById('area-total-count');
+        if(areaHeaderCount) areaHeaderCount.innerText = STATE.areas.length + " Total";
+
+        container.innerHTML = STATE.areas.map(area => {
+            const isActive = area.id === selectedAreaId;
+            const areaTables = STATE.tables.filter(t => t.area && t.area.id === area.id);
+            const bgClass = isActive ? 'border-orange-500 bg-orange-50/50 shadow-sm border-2' : 'border-gray-200 bg-white hover:border-orange-300 hover:shadow-sm border';
+
+            return `
+                <div class="p-5 rounded-xl cursor-pointer transition-all group ${bgClass}" onclick="selectArea(${area.id})">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <h4 class="font-bold text-lg text-gray-900">${area.name}</h4>
+                            <div class="flex items-center gap-3 mt-2 flex-wrap">
+                                <span class="${isActive ? 'bg-white border-gray-200' : 'bg-gray-100'} border text-gray-700 px-2.5 py-1 rounded text-xs font-semibold">${areaTables.length} Tables</span>
+                                <span class="text-sm font-medium text-gray-500">Base Fee: $0</span>
+                                ${area.reservable ? '<span class="bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Whole Area Reservable</span>' : ''}
+                            </div>
+                        </div>
+                        <div class="flex gap-1" onclick="event.stopPropagation()">
+                            <button onclick="openModal(\'area\', ${area.id})" class="text-gray-400 hover:text-blue-500 hover:bg-blue-50 p-2 rounded-lg transition-colors"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                            <button onclick="promptDeleteArea(${area.id}, '${area.name}')" class="text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg p-2 transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </div>
+                    </div>
+                </div>`;
+        }).join('');
+        lucide.createIcons();
+    }
+
+    function selectArea(id) {
+        selectedAreaId = id;
+        renderAreas();
+        renderTables();
+    }
+
+    // --- Render Tables ---
+    function renderTables() {
+        const container = document.getElementById('table-grid-container');
+        const headerCount = document.getElementById('table-total-count');
+        const headerName = document.getElementById('table-area-name');
+        if(!container) return;
+
+        const selectedArea = STATE.areas.find(a => a.id === selectedAreaId);
+        if(!selectedArea) {
+            container.innerHTML = `<p class="col-span-2 text-center text-gray-500 py-8">Select an area first</p>`;
+            return;
+        }
+
+        if(headerName) headerName.innerText = selectedArea.name;
+        const areaTables = STATE.tables.filter(t => t.area && t.area.id === selectedAreaId);
+        if(headerCount) headerCount.innerText = areaTables.length + " Tables";
+
+        if (areaTables.length === 0) {
+            container.innerHTML = `<p class="col-span-2 text-center text-gray-500 py-8">No tables in this area.</p>`;
+            return;
+        }
+
+        container.innerHTML = areaTables.map(table => {
+            return `
+                <div class="p-4 rounded-xl border border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm transition-all group relative">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <h4 class="font-bold text-lg text-gray-900">T-${table.tableNumber}</h4>
+                        </div>
+                        <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onclick="openModal(\'table\', ${table.id})" class="text-gray-400 hover:text-blue-500 p-1"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
+                            <button onclick="deleteTable(${table.id}, '${table.number}')" class="text-gray-400 hover:text-red-500 p-1"><i data-lucide="trash" class="w-3.5 h-3.5"></i></button>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 p-2 rounded border border-gray-100 space-y-1">
+                        <p class="text-xs font-semibold text-gray-500 flex justify-between">Capacity: <span class="text-gray-900">${table.seatingCapacity} Guests</span></p>
+                    </div>
+                </div>`;
+        }).join('');
+        lucide.createIcons();
+    }
+
+    // --- Render Waiters ---
+    function renderWaiters() {
+        const container = document.getElementById('waiter-table-body');
+        if(!container) return;
+        container.innerHTML = STATE.waiters.map(w => `
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-6 py-4 text-sm font-medium text-gray-500">${w.employeeId || w.id}</td>
+                    <td class="px-6 py-4 text-sm font-bold text-gray-900">${w.username}</td>
+                    <td class="px-6 py-4 text-sm text-gray-600">${w.email}</td>
+                    <td class="px-6 py-4"><span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-700">Active</span></td>
+                    <td class="px-6 py-4 text-right flex justify-end gap-2">
+                        <button onclick="openModal(\'waiter\', ${w.id})" class="p-2 bg-white border border-gray-200 hover:bg-blue-50 hover:border-blue-200 rounded-lg transition-colors text-gray-400 hover:text-blue-500 shadow-sm" title="Edit Waiter"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                        <button onclick="deleteWaiter(${w.id})" class="p-2 bg-white border border-gray-200 hover:bg-red-50 rounded-lg transition-colors text-red-500 shadow-sm" title="Revoke Access"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        lucide.createIcons();
+    }
+
+    // --- Render Customers ---
+    function renderCustomers() {
+        const container = document.getElementById('customer-table-body');
+        const counter = document.getElementById('customer-count');
+        if(!container) return;
+        if(counter) counter.innerText = "Showing " + STATE.customers.length + " records";
+
+        container.innerHTML = STATE.customers.map(c => `
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-6 py-4 text-sm font-medium text-gray-500">#${c.id}</td>
+                    <td class="px-6 py-4"><div class="flex items-center gap-3"><span class="text-sm font-bold text-gray-900">${c.username}</span></div></td>
+                    <td class="px-6 py-4 text-sm font-medium text-gray-600">${c.phoneNumber || '-'}</td>
+                    <td class="px-6 py-4 text-sm text-gray-600">${c.email}</td>
+                    <td class="px-6 py-4"><span class="text-gray-500 font-bold bg-gray-50 px-2.5 py-1 rounded border border-gray-200">Standard</span></td>
+                    <td class="px-6 py-4 text-right flex justify-end gap-2">
+                        <button onclick="deleteCustomer(${c.id})" class="p-2 bg-white border border-gray-200 hover:bg-red-50 text-red-500 rounded-lg transition-colors shadow-sm" title="Delete Customer Account"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        lucide.createIcons();
+    }
+
+    // --- Render Reservations ---
+    function renderReservations() {
+        const upContainer = document.getElementById('res-upcoming-body');
+        const hisContainer = document.getElementById('res-history-body');
+        if(!upContainer || !hisContainer) return;
+
+        const now = new Date();
+        const upcoming = STATE.reservations.filter(r => ['CONFIRMED', 'ARRIVED'].includes(r.status));
+        const history = STATE.reservations.filter(r => !['CONFIRMED', 'ARRIVED'].includes(r.status));
+
+        const makeRow = (r, isHistory) => {
+            const name = r.customer ? r.customer.username : 'Unknown';
+            const email = r.customer ? r.customer.email : '';
+            const loc = r.table ? `Table T-${r.table.tableNumber}` : (r.targetArea ? `Area: ${r.targetArea.name}` : 'Unknown');
+            const btn = !isHistory ? `<button onclick="deleteReservation(${r.id}, '${r.targetArea ? 'AREA' : 'TABLE'}')" class="px-4 py-2 bg-white border border-red-200 hover:bg-red-50 hover:border-red-300 text-red-600 rounded-lg text-sm font-bold transition-all shadow-sm flex items-center gap-2 ml-auto opacity-0 group-hover:opacity-100">Force Cancel</button>` : '';
+
+            return `
+                <tr class="hover:bg-gray-50 transition-colors group border-b border-gray-100 ${isHistory ? 'opacity-75' : ''}">
+                    <td class="px-6 py-4">
+                        <p class="font-bold text-gray-900">${name}</p>
+                        <p class="text-[11px] text-gray-500 font-medium mt-0.5 whitespace-nowrap">${email}</p>
+                    </td>
+                    <td class="px-6 py-4">
+                        <p class="font-bold text-gray-900 whitespace-nowrap">${r.reservationDate}</p>
+                        <p class="text-xs text-orange-600 font-bold mt-0.5 whitespace-nowrap">${r.reservationTime}</p>
+                    </td>
+                    <td class="px-6 py-4">
+                        <p class="font-bold text-gray-900 whitespace-nowrap">${loc}</p>
+                    </td>
+                    <td class="px-6 py-4">
+                        <p class="font-bold text-gray-900 flex items-center gap-1 whitespace-nowrap"><i data-lucide="users" class="w-4 h-4 text-gray-400"></i> ${r.partySize}</p>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="inline-block px-2.5 py-1 rounded text-[10px] uppercase tracking-wider font-bold ${isHistory ? 'bg-gray-100 text-gray-600' : 'bg-amber-100 text-amber-700'} shadow-sm">${r.status}</span>
+                    </td>
+                    <td class="px-6 py-4 text-right">${btn}</td>
+                </tr>`;
+        };
+
+        upContainer.innerHTML = upcoming.map(r => makeRow(r, false)).join('');
+        hisContainer.innerHTML = history.map(r => makeRow(r, true)).join('');
+        lucide.createIcons();
+    }
+
+    // --- API DELETE Actions ---
+    let areaToDelete = null;
+    function promptDeleteArea(id, name) {
+        areaToDelete = id;
+        document.getElementById('delete-area-name').innerText = "Delete " + name + "?";
+        toggleModal('delete-area-modal');
+    }
+
+    async function confirmDeleteArea() {
+        if(!areaToDelete) return;
+        await fetch(`/api/areas/${areaToDelete}`, { method: 'DELETE' });
+        toggleModal('delete-area-modal');
+        loadBackendData();
+    }
+
+    let tableToDelete = null;
+    function deleteTable(id, number) {
+        tableToDelete = id;
+        document.getElementById('delete-table-name').innerText = "Delete Table " + (number || id) + "?";
+        toggleModal('delete-table-modal');
+    }
+
+    async function confirmDeleteTable() {
+        if(!tableToDelete) return;
+        try {
+            await fetch(`/api/tables/${tableToDelete}`, { method: 'DELETE' });
+            alert("Table deleted successfully.");
+        } catch (err) {
+            alert("Error deleting table.");
+        }
+        toggleModal('delete-table-modal');
+        loadBackendData();
+    }
+
+    async function deleteWaiter(id) {
+        if(!confirm("Revoke waiter access?")) return;
+        await fetch(`/api/waiters/${id}`, { method: 'DELETE' });
+        loadBackendData();
+    }
+
+    async function deleteCustomer(id) {
+        if(!confirm("Delete customer account and all history?")) return;
+        await fetch(`/api/customers/${id}`, { method: 'DELETE' });
+        loadBackendData();
+    }
+
+    async function deleteReservation(id, type) {
+        if(!confirm("Force cancel this reservation?")) return;
+        await fetch(`/api/reservations/${id}?type=${type}`, { method: 'DELETE' });
+        loadBackendData();
+    }
+
+
+
+    function openResDetails(id) {
+        const res = STATE.reservations.find(r => r.id === id);
+        if(!res) return;
+
+        const name = (res.customer && res.customer.email !== 'walkin@restaurant.local') ? res.customer.username : (res.walkInName || 'Walk-In Customer');
+        document.getElementById('res-modal-initial').innerText = name.charAt(0).toUpperCase();
+        document.getElementById('res-modal-name').innerText = name;
+        document.getElementById('res-modal-contact').innerText = res.customer && res.customer.email ? res.customer.email : 'No contact on file';
+
+        const dur = res.duration || 2;
+        document.getElementById('res-modal-time').innerText = res.reservationTime + ` (${dur}h)`;
+        document.getElementById('res-modal-guests').innerText = res.partySize + ' Guests';
+
+        if(res.table) {
+            document.getElementById('res-modal-location').innerText = `Table T-${res.table.tableNumber}`;
+        } else if(res.targetArea) {
+            document.getElementById('res-modal-location').innerText = `Area: ${res.targetArea.name} (VIP)`;
+        } else {
+            document.getElementById('res-modal-location').innerText = `Unknown`;
+        }
+
+        const statusColors = {
+            'CONFIRMED': 'bg-blue-100 border border-blue-200 text-blue-700',
+            'ARRIVED': 'bg-yellow-100 border border-yellow-200 text-yellow-700',
+            'DINING': 'bg-orange-100 border border-orange-200 text-orange-700'
+        };
+        const sEl = document.getElementById('res-modal-status');
+        sEl.innerText = res.status;
+        sEl.className = `px-2.5 py-1 rounded text-[10px] uppercase tracking-wider font-black shadow-sm ${statusColors[res.status] || 'bg-gray-100 text-gray-700'}`;
+
+        if(res.assignedWaiter) { document.getElementById('res-modal-waiter-container').classList.remove('hidden'); document.getElementById('res-modal-waiter').innerText = res.assignedWaiter.username; } else { document.getElementById('res-modal-waiter-container').classList.add('hidden'); }
+        toggleModal('reservation-details-modal');
+        lucide.createIcons();
+    }
+
+    // --- Modals & Saving API ---
+    function openModal(type, id = null) {
+        if (type === 'area') {
+            const modal = document.getElementById('area-modal');
+            const title = document.getElementById('area-modal-title');
+            const form = document.getElementById('area-form');
+            form.reset();
+            if (id) {
+                title.innerText = "Edit Area";
+                const area = STATE.areas.find(a => a.id === id);
+                document.getElementById('area-id').value = area.id;
+                document.getElementById('area-name').value = area.name;
+                document.getElementById('area-reservable').checked = area.reservable;
+            } else {
+                title.innerText = "Add New Area";
+                document.getElementById('area-id').value = "";
+            }
+            toggleModal('area-modal');
+        } else if (type === 'table') {
+            if (!selectedAreaId) {
+                alert("Please select an area first to add a table.");
+                return;
+            }
+            const title = document.getElementById('table-modal-title');
+            const form = document.getElementById('table-form');
+            form.reset();
+            if (id) {
+                title.innerText = "Edit Table";
+                const table = STATE.tables.find(t => t.id === id);
+                document.getElementById('table-id').value = table.id;
+                document.getElementById('table-number').value = table.tableNumber;
+                document.getElementById('table-capacity').value = table.seatingCapacity;
+            } else {
+                title.innerText = "Add New Table";
+                document.getElementById('table-id').value = "";
+            }
+            toggleModal('table-modal');
+        } else if (type === 'waiter') {
+            const title = document.querySelector('#waiter-modal h3');
+            const form = document.getElementById('waiter-form');
+            form.reset();
+            if (id) {
+                title.innerText = "Edit Waiter Account";
+                const waiter = STATE.waiters.find(w => w.id === id);
+                let idField = document.getElementById('waiter-id');
+                if (!idField) {
+                    idField = document.createElement('input');
+                    idField.type = 'hidden';
+                    idField.id = 'waiter-id';
+                    form.appendChild(idField);
+                }
+                idField.value = waiter.id;
+                document.getElementById('waiter-name').value = waiter.username;
+                document.getElementById('waiter-email').value = waiter.email;
+                document.getElementById('waiter-password').required = false;
+                document.getElementById('waiter-password').placeholder = "Leave blank to keep current";
+            } else {
+                title.innerText = "Create Waiter Account";
+                let idField = document.getElementById('waiter-id');
+                if (idField) idField.value = "";
+                document.getElementById('waiter-password').required = true;
+                document.getElementById('waiter-password').placeholder = "";
+            }
+            toggleModal('waiter-modal');
+        }
+    }
+
+    async function saveArea() {
+        const id = document.getElementById('area-id').value;
+        const name = document.getElementById('area-name').value;
+        const reservable = document.getElementById('area-reservable').checked;
+
+        const payload = { name, reservable };
+        if (id) payload.id = id;
+
+        await fetch('/api/areas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        toggleModal('area-modal');
+        loadBackendData();
+    }
+
+    async function saveTable() {
+        const id = document.getElementById('table-id').value;
+        const tableNumber = document.getElementById('table-number').value;
+        const seatingCapacity = document.getElementById('table-capacity').value;
+
+        const payload = {
+            tableNumber,
+            seatingCapacity,
+            area: { id: selectedAreaId }
+        };
+        if (id) payload.id = id;
+
+        await fetch('/api/tables', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        toggleModal('table-modal');
+        loadBackendData();
+    }
+
+    async function saveWaiter() {
+        const idField = document.getElementById('waiter-id');
+        const id = idField ? idField.value : null;
+        const username = document.getElementById('waiter-name').value;
+        const email = document.getElementById('waiter-email').value;
+        const password = document.getElementById('waiter-password').value;
+
+        const payload = { username, email, password };
+        if (id) payload.id = id;
+
+        await fetch('/api/waiters', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        toggleModal('waiter-modal');
+        loadBackendData();
+    }
+
+    // Standard JS Tab Switching Logic (Preserved)
+    let tabs = ['overview', 'floorplan', 'waiters', 'customers', 'reservations', 'schedule', 'reviews', 'settings'];
+
+    // Init
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('currentDateInput').value = formatDateForInput(CURRENT_TIME);
+        document.getElementById('currentTimeInput').value = formatTimeForInput(CURRENT_TIME);
+
+        const hash = window.location.hash.substring(1);
+        if (tabs.includes(hash)) {
+            switchTab(hash);
+        } else {
+            switchTab('overview');
+        }
+
+        loadBackendData();
+    });
+
+    window.addEventListener('hashchange', () => {
+        const hash = window.location.hash.substring(1);
+        if (tabs.includes(hash)) {
+            switchTab(hash);
+        }
+    });
+    function switchTab(activeTabId) {
+        tabs.forEach(tab => {
+            const tabEl = document.getElementById(`tab-${tab}`);
+            if (tabEl) tabEl.classList.remove('active');
+            const btn = document.getElementById(`tab-btn-${tab}`);
+            if (btn) {
+                btn.className = "w-full text-left py-3 px-3 rounded-lg flex items-center gap-3 hover:bg-gray-100 text-gray-700 transition-all";
+                const icon = btn.querySelector('svg') || btn.querySelector('i');
+                if (icon) {
+                    icon.classList.remove('opacity-90', 'text-white');
+                    icon.classList.add('text-gray-500');
+                }
+                const spans = btn.querySelectorAll('span');
+                if (spans.length >= 2) {
+                    spans[1].classList.remove('text-gray-400');
+                    spans[1].classList.add('text-gray-500');
+                }
+            }
+        });
+
+        const activeTabEl = document.getElementById(`tab-${activeTabId}`);
+        if (activeTabEl) activeTabEl.classList.add('active');
+
+        const activeBtn = document.getElementById(`tab-btn-${activeTabId}`);
+        if (activeBtn) {
+            activeBtn.className = "w-full text-left py-3 px-3 rounded-lg flex items-center gap-3 bg-gray-900 text-white transition-all shadow-md";
+            const activeIcon = activeBtn.querySelector('svg') || activeBtn.querySelector('i');
+            if (activeIcon) {
+                activeIcon.classList.add('opacity-90', 'text-white');
+                activeIcon.classList.remove('text-gray-500');
+            }
+            const activeSpans = activeBtn.querySelectorAll('span');
+            if (activeSpans.length >= 2) {
+                activeSpans[1].classList.remove('text-gray-500');
+                activeSpans[1].classList.add('text-gray-400');
+            }
+        }
+
+        if (window.location.hash !== `#${activeTabId}`) {
+            history.pushState(null, '', window.location.pathname + '#' + activeTabId);
+        }
+    }
+
+    function toggleResView(viewName) {
+        if (viewName === 'upcoming') {
+            document.getElementById('res-view-upcoming').classList.remove('hidden');
+            document.getElementById('res-view-history').classList.add('hidden');
+            // document.getElementById('btn-res-upcoming').className = "px-4 py-2 bg-white text-gray-900 font-bold text-sm rounded shadow-sm transition-all focus:outline-none  focus:ring-0  active:outline-none active:ring-0";
+            document.getElementById('btn-res-upcoming').className = "px-4 py-2 bg-white text-gray-900 font-bold text-sm rounded shadow-sm transition-all outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none active:outline-none active:ring-0";
+            document.getElementById('btn-res-history').className = "px-4 py-2 text-gray-500 hover:text-gray-700 font-bold text-sm rounded transition-all outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none active:outline-none active:ring-0";
+        } else {
+            document.getElementById('res-view-upcoming').classList.add('hidden');
+            document.getElementById('res-view-history').classList.remove('hidden');
+            document.getElementById('btn-res-history').className = "px-4 py-2 bg-white text-gray-900 font-bold text-sm rounded shadow-sm transition-all outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none active:outline-none active:ring-0";
+            document.getElementById('btn-res-upcoming').className = "px-4 py-2 text-gray-500 hover:text-gray-700 font-bold text-sm rounded transition-all outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none active:outline-none active:ring-0";
+        }
+    }
+
+    function toggleModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal.classList.contains('active')) {
+            modal.classList.remove('active');
+        } else {
+            modal.classList.add('active');
+        }
+    }
+
+
+</script>
+</body>
+</html>
